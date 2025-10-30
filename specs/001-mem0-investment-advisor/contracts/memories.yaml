@@ -1,0 +1,514 @@
+openapi: 3.0.3
+info:
+  title: 投顧助理 - 記憶管理 API
+  version: 1.0.0
+  description: |
+    記憶片段的查詢、更新和刪除端點。
+    
+servers:
+  - url: http://localhost:8000/api/v1
+    description: 本地開發伺服器
+
+tags:
+  - name: memories
+    description: 記憶管理操作
+
+paths:
+  /memories:
+    get:
+      tags:
+        - memories
+      summary: 檢索使用者所有記憶
+      description: |
+        根據 user_id 檢索所有記憶片段，按相關性或時間排序。
+        支援語義搜索和分類篩選。
+        
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 使用者 UUID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+          
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 語義搜索關鍵字（留空則返回全部）
+          example: "科技股偏好"
+          
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [preference, fact, behavior]
+          description: 記憶分類篩選
+          
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 返回記憶數量上限
+          
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [relevance, created_at]
+            default: relevance
+          description: 排序方式（relevance 需搭配 query 參數）
+          
+      responses:
+        '200':
+          description: 成功檢索記憶列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryListResponse'
+              example:
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                total: 15
+                memories:
+                  - memory_id: "mem_abc123"
+                    content: "使用者偏好長期投資科技股"
+                    category: "preference"
+                    created_at: "2025-01-15T10:30:05Z"
+                    relevance: 0.95
+                  - memory_id: "mem_def456"
+                    content: "風險承受度為中等"
+                    category: "preference"
+                    created_at: "2025-01-15T10:32:00Z"
+                    relevance: 0.88
+                    
+        '400':
+          description: 請求參數錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "VALIDATION_ERROR"
+                  message: "user_id 必須為有效的 UUID v4"
+
+  /memories/{memory_id}:
+    get:
+      tags:
+        - memories
+      summary: 檢索單一記憶詳細資訊
+      description: |
+        根據 memory_id 檢索特定記憶片段的完整資訊。
+        
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 記憶唯一識別碼
+          example: "mem_abc123"
+          
+      responses:
+        '200':
+          description: 成功檢索記憶
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryDetail'
+              example:
+                memory_id: "mem_abc123"
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                content: "使用者偏好長期投資科技股"
+                category: "preference"
+                source_message_id: 125
+                created_at: "2025-01-15T10:30:05Z"
+                updated_at: "2025-01-15T10:30:05Z"
+                relevance: 0.95
+                
+        '404':
+          description: 記憶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "MEMORY_NOT_FOUND"
+                  message: "找不到指定的記憶"
+
+    put:
+      tags:
+        - memories
+      summary: 更新記憶內容
+      description: |
+        修改現有記憶片段的內容或分類。
+        更新後會重新計算向量嵌入。
+        
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 記憶唯一識別碼
+          
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryUpdateRequest'
+            example:
+              content: "使用者偏好長期投資美股科技股，特別是 AI 相關企業"
+              category: "preference"
+              
+      responses:
+        '200':
+          description: 成功更新記憶
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryDetail'
+              example:
+                memory_id: "mem_abc123"
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                content: "使用者偏好長期投資美股科技股，特別是 AI 相關企業"
+                category: "preference"
+                created_at: "2025-01-15T10:30:05Z"
+                updated_at: "2025-01-15T11:00:00Z"
+                relevance: 0.95
+                
+        '400':
+          description: 請求驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+        '404':
+          description: 記憶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - memories
+      summary: 刪除單一記憶
+      description: |
+        根據 memory_id 刪除指定記憶片段。
+        此操作不可逆，將同步刪除向量資料庫中的記錄。
+        
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 記憶唯一識別碼
+          
+      responses:
+        '204':
+          description: 成功刪除記憶（無回應內容）
+          
+        '404':
+          description: 記憶不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /memories/batch-delete:
+    post:
+      tags:
+        - memories
+      summary: 批量刪除記憶
+      description: |
+        根據條件批量刪除記憶片段。
+        支援：刪除特定使用者所有記憶、刪除特定分類記憶。
+        
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchDeleteRequest'
+            examples:
+              delete_all_user_memories:
+                summary: 刪除使用者所有記憶
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+              delete_by_category:
+                summary: 刪除特定分類記憶
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  category: "preference"
+                  
+      responses:
+        '200':
+          description: 成功刪除記憶
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchDeleteResponse'
+              example:
+                deleted_count: 15
+                message: "已成功刪除 15 條記憶"
+                
+        '400':
+          description: 請求參數錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /memories/search:
+    post:
+      tags:
+        - memories
+      summary: 語義搜索記憶
+      description: |
+        使用自然語言查詢記憶片段，返回最相關的結果。
+        內部使用向量相似度搜索。
+        
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemorySearchRequest'
+            example:
+              user_id: "550e8400-e29b-41d4-a716-446655440000"
+              query: "使用者對科技股的看法"
+              top_k: 5
+              
+      responses:
+        '200':
+          description: 成功檢索相關記憶
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemorySearchResponse'
+              example:
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                query: "使用者對科技股的看法"
+                results:
+                  - memory_id: "mem_abc123"
+                    content: "使用者偏好長期投資科技股"
+                    relevance: 0.95
+                    category: "preference"
+                  - memory_id: "mem_xyz789"
+                    content: "使用者看好 AI 產業前景"
+                    relevance: 0.88
+                    category: "preference"
+
+components:
+  schemas:
+    MemoryListResponse:
+      type: object
+      required:
+        - user_id
+        - total
+        - memories
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: 使用者 UUID
+        total:
+          type: integer
+          description: 總記憶數量
+        memories:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryResponse'
+            
+    MemoryResponse:
+      type: object
+      required:
+        - memory_id
+        - content
+        - created_at
+      properties:
+        memory_id:
+          type: string
+          description: 記憶唯一識別碼
+          example: "mem_abc123"
+        content:
+          type: string
+          description: 記憶內容
+          example: "使用者偏好長期投資科技股"
+        category:
+          type: string
+          enum: [preference, fact, behavior]
+          nullable: true
+          description: 記憶分類
+        created_at:
+          type: string
+          format: date-time
+          description: 建立時間
+        relevance:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          nullable: true
+          description: 相關性分數（語義搜索時提供）
+          
+    MemoryDetail:
+      type: object
+      required:
+        - memory_id
+        - user_id
+        - content
+        - created_at
+      properties:
+        memory_id:
+          type: string
+          description: 記憶唯一識別碼
+        user_id:
+          type: string
+          format: uuid
+          description: 所屬使用者 UUID
+        content:
+          type: string
+          description: 記憶內容
+        category:
+          type: string
+          enum: [preference, fact, behavior]
+          nullable: true
+          description: 記憶分類
+        source_message_id:
+          type: integer
+          nullable: true
+          description: 來源訊息 ID
+        created_at:
+          type: string
+          format: date-time
+          description: 建立時間
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 更新時間
+        relevance:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          nullable: true
+          description: 相關性分數
+          
+    MemoryUpdateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 更新後的記憶內容
+        category:
+          type: string
+          enum: [preference, fact, behavior]
+          nullable: true
+          description: 更新後的分類
+          
+    BatchDeleteRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: 使用者 UUID
+        category:
+          type: string
+          enum: [preference, fact, behavior]
+          nullable: true
+          description: 僅刪除特定分類的記憶（留空則刪除全部）
+          
+    BatchDeleteResponse:
+      type: object
+      required:
+        - deleted_count
+        - message
+      properties:
+        deleted_count:
+          type: integer
+          description: 已刪除的記憶數量
+        message:
+          type: string
+          description: 操作結果訊息
+          
+    MemorySearchRequest:
+      type: object
+      required:
+        - user_id
+        - query
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: 使用者 UUID
+        query:
+          type: string
+          minLength: 1
+          description: 搜索查詢（自然語言）
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+          description: 返回結果數量
+          
+    MemorySearchResponse:
+      type: object
+      required:
+        - user_id
+        - query
+        - results
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        query:
+          type: string
+          description: 原始查詢文字
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryResponse'
+            
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 錯誤代碼
+            message:
+              type: string
+              description: 錯誤訊息（繁體中文）
+            details:
+              type: object
+              additionalProperties: true
+              description: 額外錯誤細節

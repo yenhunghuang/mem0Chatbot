@@ -1,0 +1,455 @@
+openapi: 3.0.3
+info:
+  title: 投顧助理 - 對話 API
+  version: 1.0.0
+  description: |
+    對話功能的 REST API，包含發送訊息、檢索對話歷史等端點。
+    
+servers:
+  - url: http://localhost:8000/api/v1
+    description: 本地開發伺服器
+
+tags:
+  - name: chat
+    description: 對話相關操作
+
+paths:
+  /chat:
+    post:
+      tags:
+        - chat
+      summary: 發送訊息並獲取助理回應
+      description: |
+        核心對話端點。使用者發送訊息後，系統會：
+        1. 根據 user_id 檢索相關記憶
+        2. 整合記憶上下文呼叫 LLM
+        3. 儲存對話訊息
+        4. 返回助理回應
+        
+        **效能要求**: 回應時間 < 2 秒 (P95)
+        
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              new_conversation:
+                summary: 新對話
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  message: "你好，我想了解美股投資"
+              existing_conversation:
+                summary: 延續對話
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                  message: "那科技股有什麼推薦嗎？"
+                  
+      responses:
+        '200':
+          description: 成功獲取助理回應
+          headers:
+            X-Request-Id:
+              schema:
+                type: string
+              description: 請求追蹤 ID
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: 剩餘請求次數
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                successful_response:
+                  value:
+                    conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                    user_message:
+                      message_id: 123
+                      conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                      role: "user"
+                      content: "你好，我想了解美股投資"
+                      timestamp: "2025-01-15T10:30:00Z"
+                    assistant_message:
+                      message_id: 124
+                      conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                      role: "assistant"
+                      content: "很高興為您介紹美股投資！美股市場是全球最大的股票市場..."
+                      timestamp: "2025-01-15T10:30:02Z"
+                    memories_used:
+                      - "使用者偏好長期投資"
+                      - "風險承受度：中等"
+                      
+        '400':
+          description: 請求驗證錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                empty_message:
+                  value:
+                    error:
+                      code: "VALIDATION_ERROR"
+                      message: "訊息內容不可為空"
+                      details:
+                        field: "message"
+                        constraint: "min_length"
+                invalid_uuid:
+                  value:
+                    error:
+                      code: "VALIDATION_ERROR"
+                      message: "user_id 必須為有效的 UUID v4"
+                      details:
+                        field: "user_id"
+                        constraint: "uuid_format"
+                        
+        '429':
+          description: 超過速率限制
+          headers:
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: 限制重置時間戳 (Unix time)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "RATE_LIMIT_EXCEEDED"
+                  message: "已超過每分鐘 10 次請求限制，請稍後再試"
+                  details:
+                    limit: 10
+                    reset_at: 1672531200
+                    
+        '500':
+          description: 伺服器內部錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "INTERNAL_ERROR"
+                  message: "處理請求時發生錯誤，請稍後再試"
+                  
+        '503':
+          description: LLM API 不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "LLM_SERVICE_UNAVAILABLE"
+                  message: "AI 服務暫時無法使用，請稍後再試"
+
+  /conversations/{conversation_id}:
+    get:
+      tags:
+        - chat
+      summary: 檢索對話歷史
+      description: |
+        根據 conversation_id 檢索完整對話訊息列表。
+        訊息按時間順序排列（最舊到最新）。
+        
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 對話 UUID
+          example: "660e8400-e29b-41d4-a716-446655440001"
+          
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: 返回訊息數量上限
+          
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: 分頁偏移量
+          
+      responses:
+        '200':
+          description: 成功檢索對話歷史
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationHistory'
+              example:
+                conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                created_at: "2025-01-15T10:30:00Z"
+                last_activity: "2025-01-15T10:35:00Z"
+                message_count: 6
+                messages:
+                  - message_id: 123
+                    role: "user"
+                    content: "你好，我想了解美股投資"
+                    timestamp: "2025-01-15T10:30:00Z"
+                  - message_id: 124
+                    role: "assistant"
+                    content: "很高興為您介紹美股投資！..."
+                    timestamp: "2025-01-15T10:30:02Z"
+                    
+        '404':
+          description: 對話不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: "CONVERSATION_NOT_FOUND"
+                  message: "找不到指定的對話"
+
+  /conversations:
+    get:
+      tags:
+        - chat
+      summary: 列出使用者所有對話
+      description: |
+        根據 user_id 列出所有對話，按最後活動時間排序（最新優先）。
+        
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 使用者 UUID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+          
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, archived, expired]
+            default: active
+          description: 對話狀態篩選
+          
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: 返回對話數量上限
+          
+      responses:
+        '200':
+          description: 成功檢索對話列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationList'
+              example:
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                total: 3
+                conversations:
+                  - conversation_id: "660e8400-e29b-41d4-a716-446655440001"
+                    created_at: "2025-01-15T10:30:00Z"
+                    last_activity: "2025-01-15T10:35:00Z"
+                    status: "active"
+                    message_count: 6
+                  - conversation_id: "660e8400-e29b-41d4-a716-446655440002"
+                    created_at: "2025-01-14T15:20:00Z"
+                    last_activity: "2025-01-14T15:45:00Z"
+                    status: "active"
+                    message_count: 10
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - user_id
+        - message
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: 使用者唯一識別碼（前端 localStorage 產生）
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        conversation_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 對話 ID（新對話時留空，後端自動產生）
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: 使用者訊息內容
+          example: "你好，我想了解美股投資"
+          
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - user_message
+        - assistant_message
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: 對話 ID
+        user_message:
+          $ref: '#/components/schemas/Message'
+        assistant_message:
+          $ref: '#/components/schemas/Message'
+        memories_used:
+          type: array
+          items:
+            type: string
+          description: 本次回應使用的記憶片段內容
+          example:
+            - "使用者偏好長期投資"
+            - "風險承受度：中等"
+            
+    Message:
+      type: object
+      required:
+        - message_id
+        - conversation_id
+        - role
+        - content
+        - timestamp
+      properties:
+        message_id:
+          type: integer
+          description: 訊息唯一 ID
+          example: 123
+        conversation_id:
+          type: string
+          format: uuid
+          description: 所屬對話 ID
+        role:
+          type: string
+          enum: [user, assistant]
+          description: 訊息角色
+        content:
+          type: string
+          description: 訊息內容
+        timestamp:
+          type: string
+          format: date-time
+          description: 訊息時間戳（ISO 8601 格式）
+          example: "2025-01-15T10:30:00Z"
+          
+    ConversationHistory:
+      type: object
+      required:
+        - conversation_id
+        - user_id
+        - created_at
+        - last_activity
+        - message_count
+        - messages
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        last_activity:
+          type: string
+          format: date-time
+        message_count:
+          type: integer
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+            
+    ConversationList:
+      type: object
+      required:
+        - user_id
+        - total
+        - conversations
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        total:
+          type: integer
+          description: 總對話數量
+        conversations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationSummary'
+            
+    ConversationSummary:
+      type: object
+      required:
+        - conversation_id
+        - created_at
+        - last_activity
+        - status
+        - message_count
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        last_activity:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, archived, expired]
+        message_count:
+          type: integer
+          
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 錯誤代碼（大寫蛇形命名）
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: 錯誤訊息（使用者友善的繁體中文）
+              example: "訊息內容不可為空"
+            details:
+              type: object
+              description: 額外錯誤細節（選用）
+              additionalProperties: true

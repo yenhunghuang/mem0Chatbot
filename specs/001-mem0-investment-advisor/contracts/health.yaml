@@ -1,0 +1,302 @@
+openapi: 3.0.3
+info:
+  title: 投顧助理 - 健康檢查 API
+  version: 1.0.0
+  description: |
+    系統健康狀態檢查端點，用於監控和除錯。
+    
+servers:
+  - url: http://localhost:8000/api/v1
+    description: 本地開發伺服器
+
+tags:
+  - name: health
+    description: 健康檢查與系統狀態
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: 基本健康檢查
+      description: |
+        快速檢查 API 伺服器是否正常運作。
+        此端點不檢查外部依賴（LLM、資料庫等）。
+        
+      responses:
+        '200':
+          description: 服務正常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                timestamp: "2025-01-15T10:30:00Z"
+                version: "1.0.0"
+
+  /health/detailed:
+    get:
+      tags:
+        - health
+      summary: 詳細健康檢查
+      description: |
+        檢查所有系統依賴的狀態，包含：
+        - SQLite 資料庫連線
+        - ChromaDB 向量資料庫
+        - Google Gemini API
+        - Mem0 服務
+        
+        **效能要求**: 回應時間 < 5 秒
+        
+      responses:
+        '200':
+          description: 服務正常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+              examples:
+                all_healthy:
+                  summary: 所有服務正常
+                  value:
+                    status: "healthy"
+                    timestamp: "2025-01-15T10:30:00Z"
+                    version: "1.0.0"
+                    dependencies:
+                      database:
+                        status: "up"
+                        response_time_ms: 5
+                      vector_db:
+                        status: "up"
+                        response_time_ms: 15
+                        collection_count: 1
+                      llm_api:
+                        status: "up"
+                        response_time_ms: 320
+                      mem0:
+                        status: "up"
+                        response_time_ms: 25
+                partial_degraded:
+                  summary: 部分服務降級
+                  value:
+                    status: "degraded"
+                    timestamp: "2025-01-15T10:30:00Z"
+                    version: "1.0.0"
+                    dependencies:
+                      database:
+                        status: "up"
+                        response_time_ms: 5
+                      vector_db:
+                        status: "up"
+                        response_time_ms: 15
+                        collection_count: 1
+                      llm_api:
+                        status: "down"
+                        error: "API quota exceeded"
+                      mem0:
+                        status: "up"
+                        response_time_ms: 25
+                        
+        '503':
+          description: 服務不可用（關鍵依賴失效）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+              example:
+                status: "unhealthy"
+                timestamp: "2025-01-15T10:30:00Z"
+                version: "1.0.0"
+                dependencies:
+                  database:
+                    status: "down"
+                    error: "Connection refused"
+                  vector_db:
+                    status: "down"
+                    error: "Service unavailable"
+                  llm_api:
+                    status: "unknown"
+                  mem0:
+                    status: "unknown"
+
+  /metrics:
+    get:
+      tags:
+        - health
+      summary: 系統效能指標
+      description: |
+        提供系統效能統計資訊，用於監控和優化。
+        
+      responses:
+        '200':
+          description: 成功獲取指標
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+              example:
+                timestamp: "2025-01-15T10:30:00Z"
+                uptime_seconds: 3600
+                api:
+                  total_requests: 1500
+                  requests_per_minute: 25
+                  average_response_time_ms: 450
+                  p95_response_time_ms: 1800
+                  error_rate: 0.02
+                database:
+                  total_conversations: 50
+                  total_messages: 1200
+                  total_memories: 300
+                  db_size_mb: 15.5
+                llm:
+                  total_tokens_used: 50000
+                  average_tokens_per_request: 350
+                  api_errors: 3
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+          description: 服務狀態
+        timestamp:
+          type: string
+          format: date-time
+          description: 檢查時間
+        version:
+          type: string
+          description: API 版本
+          example: "1.0.0"
+          
+    DetailedHealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+        - dependencies
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: |
+            整體服務狀態：
+            - healthy: 所有依賴正常
+            - degraded: 部分非關鍵依賴失效（如 LLM API 暫時不可用）
+            - unhealthy: 關鍵依賴失效（如資料庫無法連線）
+        timestamp:
+          type: string
+          format: date-time
+          description: 檢查時間
+        version:
+          type: string
+          description: API 版本
+        dependencies:
+          type: object
+          description: 各依賴服務的狀態
+          properties:
+            database:
+              $ref: '#/components/schemas/DependencyStatus'
+            vector_db:
+              $ref: '#/components/schemas/DependencyStatus'
+            llm_api:
+              $ref: '#/components/schemas/DependencyStatus'
+            mem0:
+              $ref: '#/components/schemas/DependencyStatus'
+              
+    DependencyStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [up, down, unknown]
+          description: 依賴狀態
+        response_time_ms:
+          type: integer
+          description: 回應時間（毫秒）
+        error:
+          type: string
+          nullable: true
+          description: 錯誤訊息（當 status 為 down 時）
+        collection_count:
+          type: integer
+          nullable: true
+          description: ChromaDB 集合數量（僅 vector_db）
+          
+    MetricsResponse:
+      type: object
+      required:
+        - timestamp
+        - uptime_seconds
+        - api
+        - database
+        - llm
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: 指標收集時間
+        uptime_seconds:
+          type: integer
+          description: 伺服器運行時間（秒）
+        api:
+          type: object
+          description: API 效能指標
+          properties:
+            total_requests:
+              type: integer
+              description: 總請求次數
+            requests_per_minute:
+              type: number
+              format: float
+              description: 每分鐘請求數（過去 5 分鐘平均）
+            average_response_time_ms:
+              type: integer
+              description: 平均回應時間（毫秒）
+            p95_response_time_ms:
+              type: integer
+              description: P95 回應時間（毫秒）
+            error_rate:
+              type: number
+              format: float
+              description: 錯誤率（0.0-1.0）
+        database:
+          type: object
+          description: 資料庫統計
+          properties:
+            total_conversations:
+              type: integer
+              description: 總對話數量
+            total_messages:
+              type: integer
+              description: 總訊息數量
+            total_memories:
+              type: integer
+              description: 總記憶數量
+            db_size_mb:
+              type: number
+              format: float
+              description: 資料庫檔案大小（MB）
+        llm:
+          type: object
+          description: LLM 使用統計
+          properties:
+            total_tokens_used:
+              type: integer
+              description: 總 token 用量
+            average_tokens_per_request:
+              type: integer
+              description: 平均每次請求 token 數
+            api_errors:
+              type: integer
+              description: API 錯誤次數

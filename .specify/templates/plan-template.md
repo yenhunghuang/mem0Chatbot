@@ -31,7 +31,31 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Code Quality Excellence Gates:**
+- [ ] Architecture follows documented patterns and design principles
+- [ ] Component structure supports maintainability and clear interfaces
+- [ ] Documentation strategy defined for all modules
+
+**Testing Standards Gates:**
+- [ ] Test strategy includes unit, integration, and performance tests
+- [ ] 90%+ code coverage target established
+- [ ] TDD approach planned for all critical functionality
+
+**User Experience Consistency Gates:**
+- [ ] Conversation patterns and response formats standardized
+- [ ] Error handling and messaging guidelines defined
+- [ ] Response time requirements specified
+
+**Performance Requirements Gates:**
+- [ ] Response time targets defined (2s standard, 5s complex queries)
+- [ ] Memory operation performance specified (500ms)
+- [ ] Concurrent user capacity planned (100 users minimum)
+
+**Localization Standards Gates:**
+- [ ] All specifications and plans written in Traditional Chinese (zh-TW)
+- [ ] User-facing documentation in Traditional Chinese
+- [ ] Chatbot responses and UI text in Traditional Chinese
+- [ ] Code comments language strategy defined (English for technical, zh-TW for user-facing)
 
 ## Project Structure
 

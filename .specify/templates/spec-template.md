@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+<!--
+  CONSTITUTION REQUIREMENT: This specification MUST be written in Traditional Chinese (zh-TW)
+  per the Localization Standards principle. All user-facing elements described herein
+  must also be in Traditional Chinese.
+-->
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
