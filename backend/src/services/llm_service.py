@@ -73,6 +73,37 @@ class LLMService:
             # 構建提示
             full_prompt = f"{system_prompt}\n使用者：{user_input}\n助理："
 
+            # 配置安全設定（完整的 5 個類別）
+            # 使用 BLOCK_ONLY_HIGH 平衡安全性和可用性
+            safety_settings = [
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_UNSPECIFIED,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DEROGATORY,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_VIOLENCE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUAL,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_MEDICAL,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+            ]
+
+            logger.debug(f"發送 LLM 請求，prompt 長度: {len(full_prompt)} 字元")
+
             # 呼叫模型
             response = cls._model.generate_content(
                 full_prompt,
@@ -80,15 +111,49 @@ class LLMService:
                     temperature=0.7,
                     max_output_tokens=500,
                 ),
+                safety_settings=safety_settings,
             )
 
-            if response and response.text:
+            logger.debug(f"LLM 回應狀態: finish_reason={getattr(response, 'finish_reason', 'unknown')}")
+
+            # 檢查是否因為安全過濾器被阻擋
+            if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
+                logger.error(
+                    f"LLM 回應被安全過濾器阻擋。"
+                    f"Block reason: {response.prompt_feedback.block_reason}, "
+                    f"Safety ratings: {response.prompt_feedback.safety_ratings}"
+                )
+                raise LLMError(
+                    "您的查詢被安全過濾器識別為不適當的內容。請用不同的方式表達您的問題。"
+                )
+
+            # 檢查回應內容是否有效
+            if response and hasattr(response, 'text') and response.text:
                 logger.info(
-                    f"LLM 回應成功 (tokens: {len(response.text.split())})"
+                    f"LLM 回應成功 (tokens: {len(response.text.split())}, "
+                    f"finish_reason: {getattr(response, 'finish_reason', 'STOP')})"
                 )
                 return response.text
             else:
-                raise LLMError("LLM 未返回有效回應")
+                # 記錄完整的回應以便調試
+                finish_reason = getattr(response, 'finish_reason', 'unknown')
+                logger.error(
+                    f"LLM 未返回有效回應。"
+                    f"finish_reason: {finish_reason}, "
+                    f"has_text: {hasattr(response, 'text')}"
+                )
+                
+                # 如果有安全評級信息，也記錄下來
+                if hasattr(response, 'safety_ratings'):
+                    logger.error(f"Safety ratings: {response.safety_ratings}")
+                
+                # 根據 finish_reason 提供更具體的錯誤訊息
+                if finish_reason == "SAFETY":
+                    raise LLMError("回應因安全考慮被阻擋。請用不同的方式表達您的問題。")
+                elif finish_reason == "MAX_TOKENS":
+                    raise LLMError("回應過長，已被截斷。")
+                else:
+                    raise LLMError(f"LLM 未返回有效回應 (reason: {finish_reason})")
 
         except Exception as e:
             logger.error(f"LLM 生成失敗: {str(e)}")
@@ -120,14 +185,64 @@ class LLMService:
 
 提取的偏好:"""
 
-            response = cls._model.generate_content(extraction_prompt)
+            # 配置安全設定（完整的 6 個類別）
+            safety_settings = [
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_UNSPECIFIED,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DEROGATORY,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_VIOLENCE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUAL,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_MEDICAL,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+                {
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                },
+            ]
 
-            if response and response.text:
+            response = cls._model.generate_content(
+                extraction_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.3,
+                    max_output_tokens=200,
+                ),
+                safety_settings=safety_settings,
+            )
+
+            # 檢查回應是否被安全過濾器阻擋
+            if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
+                logger.warning(
+                    f"偏好提取被安全過濾器阻擋: block_reason={response.prompt_feedback.block_reason}"
+                )
+                return None
+
+            if response and hasattr(response, 'text') and response.text:
                 result = response.text.strip()
                 if result == "NONE":
+                    logger.debug("用戶消息中未找到投資偏好")
                     return None
+                logger.info(f"成功提取投資偏好: {result[:100]}")
                 return result
             else:
+                finish_reason = getattr(response, 'finish_reason', 'unknown')
+                logger.warning(
+                    f"偏好提取未返回有效回應，finish_reason: {finish_reason}"
+                )
+                if hasattr(response, 'safety_ratings'):
+                    logger.warning(f"Safety ratings: {response.safety_ratings}")
                 return None
 
         except Exception as e:

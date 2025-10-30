@@ -7,7 +7,7 @@
 /**
  * API 基礎 URL
  */
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 /**
  * API 請求超時 (毫秒)
@@ -147,9 +147,9 @@ async function getConversationMessages(conversationId, limit = 50) {
  */
 async function checkHealth() {
   console.log('[API] 檢查 API 健康狀態');
-  
+
   try {
-    const response = await fetch('/health', {
+    const response = await fetch('http://localhost:8000/health', {
       method: 'GET',
       timeout: 5000,
     });

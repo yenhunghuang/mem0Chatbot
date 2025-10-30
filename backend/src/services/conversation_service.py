@@ -14,6 +14,7 @@ from ..utils.exceptions import (
     MemoryError,
     LLMError,
     DatabaseError,
+    NotFoundError,
 )
 from ..storage.storage_service import StorageService
 from ..services.memory_service import MemoryService
@@ -115,19 +116,28 @@ class ConversationService:
 
         try:
             if conversation_id:
-                # 取得現有對話
-                conversation = StorageService.get_conversation(conversation_id)
-                # 驗證對話屬於該使用者
-                if conversation.user_id != user_id:
-                    raise ValidationError(
-                        "對話不屬於該使用者",
-                        details={
-                            "conversation_id": conversation_id,
-                            "reason": "unauthorized access",
-                        },
+                try:
+                    # 嘗試取得現有對話
+                    conversation = StorageService.get_conversation(conversation_id)
+                    # 驗證對話屬於該使用者
+                    if conversation.user_id != user_id:
+                        raise ValidationError(
+                            "對話不屬於該使用者",
+                            details={
+                                "conversation_id": conversation_id,
+                                "reason": "unauthorized access",
+                            },
+                        )
+                    logger.info(f"取得對話: conversation_id={conversation_id}")
+                    return conversation
+                except NotFoundError:
+                    # 對話不存在，建立新對話 (降級處理)
+                    logger.warning(
+                        f"對話不存在 (conversation_id={conversation_id})，建立新對話"
                     )
-                logger.info(f"取得對話: conversation_id={conversation_id}")
-                return conversation
+                    conversation = StorageService.create_conversation(user_id)
+                    logger.info(f"建立新對話: conversation_id={conversation.id}")
+                    return conversation
             else:
                 # 建立新對話
                 conversation = StorageService.create_conversation(user_id)

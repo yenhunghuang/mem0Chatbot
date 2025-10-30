@@ -96,7 +96,7 @@ class StorageService:
             row = cursor.fetchone()
 
             if not row:
-                raise NotFoundError(f"對話未找到: {conversation_id}")
+                raise NotFoundError("conversation", str(conversation_id))
 
             return Conversation(
                 user_id=row[1],

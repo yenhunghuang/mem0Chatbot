@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     # Performance
     response_timeout_seconds: int = 30
     memory_search_top_k: int = 5
+    memory_retrieval_top_k: int = 5  # Number of memories to retrieve
+    conversation_context_window: int = 10  # Number of recent messages to include in context
 
     # Memory Management
     memory_ttl_days: int = 30

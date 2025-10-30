@@ -9,17 +9,17 @@ from typing import Optional
 from fastapi import APIRouter, status, Request
 from fastapi.responses import JSONResponse
 
-from ..config import settings
-from ..utils.logger import get_logger
-from ..utils.exceptions import (
+from ...config import settings
+from ...utils.logger import get_logger
+from ...utils.exceptions import (
     ValidationError,
     MemoryError,
     LLMError,
     DatabaseError,
     NotFoundError,
 )
-from ..services.conversation_service import ConversationService
-from ..api.schemas.chat import (
+from ...services.conversation_service import ConversationService
+from ..schemas.chat import (
     ChatRequest,
     ChatResponse,
     ConversationResponse,

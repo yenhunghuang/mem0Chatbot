@@ -113,12 +113,13 @@ async def log_requests_middleware(request: Request, call_next: Callable):
 
     記錄所有 API 請求和響應時間。
     """
+    request_id = getattr(request.state, 'request_id', 'UNKNOWN')
     logger.info(
-        f"[{request.state.request_id}] {request.method} {request.url.path}",
+        f"[{request_id}] {request.method} {request.url.path}",
     )
     response = await call_next(request)
     logger.info(
-        f"[{request.state.request_id}] {request.method} {request.url.path} -> {response.status_code}",
+        f"[{request_id}] {request.method} {request.url.path} -> {response.status_code}",
     )
     return response
 

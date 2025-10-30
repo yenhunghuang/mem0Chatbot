@@ -27,25 +27,28 @@ class MemoryService:
 
     @classmethod
     def initialize(cls) -> None:
-        """初始化 Mem0 客戶端"""
+        """初始化記憶服務"""
         try:
             if Memory is None:
                 raise MemoryError("Mem0 庫未安裝")
 
-            # 初始化 Mem0
+            # 初始化 Mem0 with Google Gemini
             cls._mem0_client = Memory.from_config(
                 {
                     "llm": {
-                        "provider": "google",
+                        "provider": "gemini",  # 正確的 provider 名稱
                         "config": {
                             "model": settings.mem0_llm_model,
                             "temperature": 0.7,
+                            "max_tokens": 2000,
+                            "api_key": settings.google_api_key,
                         },
                     },
                     "embedder": {
-                        "provider": "google",
+                        "provider": "gemini",  # 正確的 provider 名稱
                         "config": {
-                            "model": settings.mem0_embedder_model,
+                            "model": "models/text-embedding-004",
+                            "api_key": settings.google_api_key,
                         },
                     },
                     "vector_store": {
@@ -57,7 +60,7 @@ class MemoryService:
                     },
                 }
             )
-            logger.info("Mem0 客戶端已初始化")
+            logger.info("Mem0 客戶端已初始化（使用 Google Gemini）")
 
         except Exception as e:
             logger.error(f"Mem0 初始化失敗: {str(e)}")

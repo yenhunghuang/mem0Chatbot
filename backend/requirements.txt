@@ -1,21 +1,20 @@
 # FastAPI & Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic>=2.7.3,<3.0.0
+pydantic-settings>=2.1.0
 
 # Mem0 Memory System
 mem0ai==0.0.10
 
 # Google Cloud AI APIs
 google-generativeai==0.3.1
-google-ai-python==0.1.0
+google-genai>=1.47.0  # Required by mem0 for Gemini embeddings
 
 # Vector Database
-chromadb==0.4.18
+chromadb>=0.4.0
 
-# Database
-sqlite3  # Built-in, listed for clarity
+# Database (SQLite3 is built-in to Python)
 
 # Environment & Configuration
 python-dotenv==1.0.0
