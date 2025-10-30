@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(claude mcp add:*)",
-      "Bash(claude mcp:*)"
+      "Bash(claude mcp:*)",
+      "mcp__github__create_repository",
+      "Bash(gh repo create:*)",
+      "Bash(git push:*)",
+      "Bash(gh:*)",
+      "Bash(where:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
