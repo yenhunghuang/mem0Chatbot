@@ -109,44 +109,74 @@ class LLMService:
 
             logger.debug(f"LLM 回應狀態: finish_reason={getattr(response, 'finish_reason', 'unknown')}")
 
-            # 檢查是否因為安全過濾器被阻擋
+            # 取得 finish_reason
+            finish_reason = getattr(response, 'finish_reason', None)
+            finish_reason_name = finish_reason.name if finish_reason and hasattr(finish_reason, 'name') else str(finish_reason)
+            
+            logger.debug(f"finish_reason 詳情: {finish_reason} (name={finish_reason_name})")
+
+            # 檢查 finish_reason 以判斷是否因為安全原因被阻擋
+            if finish_reason and finish_reason_name == "SAFETY":
+                logger.warning(
+                    f"LLM 回應因安全原因被阻擋 (finish_reason=SAFETY)"
+                )
+                raise LLMError(
+                    "您的查詢因安全原因被阻擋。請用不同的方式表達您的問題。"
+                )
+
+            # 檢查是否有 prompt_feedback 中的阻擋原因
             if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
-                logger.error(
+                logger.warning(
                     f"LLM 回應被安全過濾器阻擋。"
-                    f"Block reason: {response.prompt_feedback.block_reason}, "
-                    f"Safety ratings: {response.prompt_feedback.safety_ratings}"
+                    f"Block reason: {response.prompt_feedback.block_reason}"
                 )
                 raise LLMError(
                     "您的查詢被安全過濾器識別為不適當的內容。請用不同的方式表達您的問題。"
                 )
 
-            # 檢查回應內容是否有效
-            if response and hasattr(response, 'text') and response.text:
-                logger.info(
-                    f"LLM 回應成功 (tokens: {len(response.text.split())}, "
-                    f"finish_reason: {getattr(response, 'finish_reason', 'STOP')})"
+            # 安全地取得回應文本，避免觸發快速訪問器異常
+            try:
+                text = None
+                if response and response.candidates and len(response.candidates) > 0:
+                    candidate = response.candidates[0]
+                    # 檢查是否有內容和部分
+                    if candidate.content and hasattr(candidate.content, 'parts'):
+                        parts = candidate.content.parts
+                        if parts:  # 檢查 parts 是否不為空
+                            text = "".join(part.text for part in parts if hasattr(part, 'text'))
+                
+                # 如果成功取得文本
+                if text:
+                    logger.info(
+                        f"LLM 回應成功 (tokens: {len(text.split())}, "
+                        f"finish_reason: {finish_reason_name})"
+                    )
+                    return text
+                
+                # 如果沒有找到有效的回應部分，記錄詳細信息用於調試
+                has_candidates = response and response.candidates and len(response.candidates) > 0
+                has_content = has_candidates and response.candidates[0].content is not None
+                has_parts = has_content and hasattr(response.candidates[0].content, 'parts')
+                parts_content = response.candidates[0].content.parts if has_parts else None
+                parts_len = len(parts_content) if parts_content else 0
+                
+                logger.warning(
+                    f"LLM 回應為空: "
+                    f"finish_reason={finish_reason_name}, "
+                    f"has_candidates={has_candidates}, "
+                    f"has_content={has_content}, "
+                    f"has_parts={has_parts}, "
+                    f"parts_len={parts_len}"
                 )
-                return response.text
-            else:
-                # 記錄完整的回應以便調試
-                finish_reason = getattr(response, 'finish_reason', 'unknown')
+                
+                # 回應為空，可能是由於內容審核或其他原因
+                raise LLMError("LLM 回應為空，請稍後重試。")
+            except ValueError as e:
+                # 這通常是由 response.text 快速訪問器拋出的
                 logger.error(
-                    f"LLM 未返回有效回應。"
-                    f"finish_reason: {finish_reason}, "
-                    f"has_text: {hasattr(response, 'text')}"
+                    f"LLM 回應無效 (ValueError): {str(e)}"
                 )
-                
-                # 如果有安全評級信息，也記錄下來
-                if hasattr(response, 'safety_ratings'):
-                    logger.error(f"Safety ratings: {response.safety_ratings}")
-                
-                # 根據 finish_reason 提供更具體的錯誤訊息
-                if finish_reason == "SAFETY":
-                    raise LLMError("回應因安全考慮被阻擋。請用不同的方式表達您的問題。")
-                elif finish_reason == "MAX_TOKENS":
-                    raise LLMError("回應過長，已被截斷。")
-                else:
-                    raise LLMError(f"LLM 未返回有效回應 (reason: {finish_reason})")
+                raise LLMError(f"LLM 回應無效: {str(e)}")
 
         except Exception as e:
             logger.error(f"LLM 生成失敗: {str(e)}")
@@ -207,27 +237,46 @@ class LLMService:
                 safety_settings=safety_settings,
             )
 
-            # 檢查回應是否被安全過濾器阻擋
+            # 檢查 finish_reason 以判斷是否因為安全原因被阻擋
+            finish_reason = getattr(response, 'finish_reason', None)
+            if finish_reason and finish_reason.name == "SAFETY":
+                logger.warning(
+                    f"偏好提取因安全原因被阻擋 (finish_reason=SAFETY)"
+                )
+                return None
+
+            # 檢查是否有 prompt_feedback 中的阻擋原因
             if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
                 logger.warning(
                     f"偏好提取被安全過濾器阻擋: block_reason={response.prompt_feedback.block_reason}"
                 )
                 return None
 
-            if response and hasattr(response, 'text') and response.text:
-                result = response.text.strip()
-                if result == "NONE":
-                    logger.debug("用戶消息中未找到投資偏好")
-                    return None
-                logger.info(f"成功提取投資偏好: {result[:100]}")
-                return result
-            else:
-                finish_reason = getattr(response, 'finish_reason', 'unknown')
-                logger.warning(
+            # 安全地取得回應文本
+            try:
+                if response and response.candidates and len(response.candidates) > 0:
+                    candidate = response.candidates[0]
+                    # 檢查是否有內容
+                    if candidate.content and hasattr(candidate.content, 'parts'):
+                        parts = candidate.content.parts
+                        if parts and len(parts) > 0:
+                            text = "".join(part.text for part in parts if hasattr(part, 'text'))
+                            if text:
+                                result = text.strip()
+                                if result == "NONE":
+                                    logger.debug("用戶消息中未找到投資偏好")
+                                    return None
+                                logger.info(f"成功提取投資偏好: {result[:100]}")
+                                return result
+                
+                # 如果沒有找到有效的回應部分
+                logger.debug(
                     f"偏好提取未返回有效回應，finish_reason: {finish_reason}"
                 )
-                if hasattr(response, 'safety_ratings'):
-                    logger.warning(f"Safety ratings: {response.safety_ratings}")
+                return None
+            except ValueError as e:
+                # 這通常是由快速訪問器拋出的
+                logger.debug(f"偏好提取回應無效: {str(e)}")
                 return None
 
         except Exception as e:
