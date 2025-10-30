@@ -57,10 +57,18 @@ class LLMService:
                 cls.initialize()
 
             # 構建系統提示
-            system_prompt = """你是一個友善的投資顧問助理。
-你的職責是根據使用者的投資偏好和風險承受度提供個人化的投資建議。
-所有回應必須使用繁體中文。
-回應應該簡潔明了，避免過度技術性的術語。
+            system_prompt = """你是一個專業的投資資訊助理，提供教育性質的投資知識。
+
+重要聲明：
+- 僅提供一般性教育資訊，不構成投資建議
+- 投資有風險，決策需自行評估
+- 建議諮詢專業理財顧問
+
+你的職責：
+- 根據使用者偏好提供相關的投資知識
+- 使用繁體中文回應
+- 保持客觀、中立的態度
+- 避免承諾任何投資回報
 """
 
             # 新增記憶上下文
@@ -160,14 +168,34 @@ class LLMService:
                 parts_content = response.candidates[0].content.parts if has_parts else None
                 parts_len = len(parts_content) if parts_content else 0
                 
+                # 檢查安全評級和候選者的阻擋原因
+                candidate_finish_reason = None
+                safety_ratings = None
+                if has_candidates:
+                    candidate = response.candidates[0]
+                    candidate_finish_reason = getattr(candidate, 'finish_reason', None)
+                    safety_ratings = getattr(candidate, 'safety_ratings', None)
+                
                 logger.warning(
                     f"LLM 回應為空: "
                     f"finish_reason={finish_reason_name}, "
+                    f"candidate_finish_reason={candidate_finish_reason}, "
                     f"has_candidates={has_candidates}, "
                     f"has_content={has_content}, "
                     f"has_parts={has_parts}, "
                     f"parts_len={parts_len}"
                 )
+                
+                # 記錄安全評級以便診斷
+                if safety_ratings:
+                    logger.warning(f"Safety ratings: {safety_ratings}")
+                
+                # 如果候選者的 finish_reason 是 SAFETY
+                if candidate_finish_reason:
+                    candidate_finish_reason_name = candidate_finish_reason.name if hasattr(candidate_finish_reason, 'name') else str(candidate_finish_reason)
+                    if candidate_finish_reason_name == "SAFETY":
+                        logger.warning("候選者因安全原因被阻擋")
+                        raise LLMError("您的查詢因安全原因被阻擋。請用不同的方式表達您的問題。")
                 
                 # 回應為空，可能是由於內容審核或其他原因
                 raise LLMError("LLM 回應為空，請稍後重試。")
