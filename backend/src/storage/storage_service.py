@@ -6,6 +6,7 @@
 
 from typing import List, Optional
 from datetime import datetime
+import uuid
 
 from ..config import settings
 from ..utils.logger import get_logger
@@ -37,18 +38,17 @@ class StorageService:
             conn = DatabaseManager.get_connection()
             cursor = conn.cursor()
 
+            conversation_id = str(uuid.uuid4())
             now = datetime.now().isoformat()
 
             cursor.execute(
                 """
-                INSERT INTO conversations (user_id, created_at, last_activity, status, message_count)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO conversations (id, user_id, created_at, last_activity, status, message_count)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (user_id, now, now, "active", 0),
+                (conversation_id, user_id, now, now, "active", 0),
             )
             conn.commit()
-
-            conversation_id = cursor.lastrowid
 
             logger.info(f"對話已建立: conversation_id={conversation_id}, user_id={user_id}")
 

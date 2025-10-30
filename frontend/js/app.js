@@ -183,9 +183,9 @@ function addMessageToUI(role, content) {
 }
 
 /**
- * 更新記憶顯示
+ * 更新記憶顯示（US2 T043 - 支援字典格式記憶）
  * 
- * @param {string[]} memories - 使用的記憶列表
+ * @param {Array<string|Object>} memories - 使用的記憶列表（字串或字典格式）
  */
 function updateMemoriesDisplay(memories) {
   if (!memories || memories.length === 0) {
@@ -197,8 +197,34 @@ function updateMemoriesDisplay(memories) {
   sidebarDiv.classList.add('active');
   
   memoriesDiv.innerHTML = memories
-    .map((memory) => `<div class="memory-item">${escapeHtml(memory)}</div>`)
+    .map((memory) => {
+      // 支援字典格式和字串格式
+      let content = memory;
+      let relevance = null;
+      
+      if (typeof memory === 'object' && memory !== null) {
+        content = memory.content || memory.text || '';
+        relevance = memory.metadata?.relevance;
+      }
+      
+      // 建立記憶項目
+      let memoryHTML = `<div class="memory-item">`;
+      
+      // 顯示相關度徽章（如果有）
+      if (relevance !== null && typeof relevance === 'number') {
+        const percent = Math.round(relevance * 100);
+        const relevanceClass = percent >= 80 ? 'high' : percent >= 50 ? 'medium' : 'low';
+        memoryHTML += `<span class="relevance-badge ${relevanceClass}">${percent}%</span>`;
+      }
+      
+      memoryHTML += `<span class="memory-content">${escapeHtml(content)}</span></div>`;
+      
+      return memoryHTML;
+    })
     .join('');
+  
+  // 在控制台顯示記憶信息（用於調試）
+  console.log('[App] 使用的記憶:', memories);
 }
 
 /**

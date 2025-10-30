@@ -35,15 +35,15 @@ class LLMService:
     def generate_response(
         cls,
         user_input: str,
-        memories: Optional[List[str]] = None,
+        memories: Optional[List] = None,
         conversation_history: Optional[List[dict]] = None,
     ) -> str:
         """
-        生成 LLM 回應
+        生成 LLM 回應（US2 T039 改進）
 
         Args:
             user_input: 使用者輸入
-            memories: 相關記憶列表（選用）
+            memories: 相關記憶列表（可以是字串或字典列表）
             conversation_history: 對話歷史（選用）
 
         Returns:
@@ -57,43 +57,65 @@ class LLMService:
                 cls.initialize()
 
             # 構建系統提示 - 使用簡潔中性的措辭
-            system_prompt = """你是一個專業、友善的助理。
+            system_prompt = """你是一個專業、友善的投資顧問助理。
 請根據使用者的需求提供資訊和建議。
 使用繁體中文回應，保持簡潔明瞭。
 """
 
-            # 新增記憶上下文
+            # 新增記憶上下文（US2 T039）
             if memories:
-                memory_context = "以下是使用者的已知偏好和信息：\n"
+                memory_context = "\n使用者的投資偏好和已知信息：\n"
                 for memory in memories:
-                    memory_context += f"- {memory}\n"
-                system_prompt += f"\n{memory_context}"
+                    # 支援字典格式（新增）或字串格式（舊版本相容）
+                    if isinstance(memory, dict):
+                        content = memory.get("content", "")
+                    else:
+                        content = str(memory)
+                    
+                    if content:
+                        memory_context += f"• {content}\n"
+                
+                system_prompt += memory_context
+
+            # 構建對話歷史上下文
+            history_context = ""
+            if conversation_history:
+                history_context = "\n對話歷史：\n"
+                for msg in conversation_history:
+                    role = msg.get("role", "unknown")
+                    content = msg.get("content", "")
+                    if role == "user":
+                        history_context += f"使用者: {content}\n"
+                    elif role == "assistant":
+                        history_context += f"助理: {content}\n"
+                
+                system_prompt += history_context
 
             # 構建提示
             full_prompt = f"{system_prompt}\n使用者：{user_input}\n助理："
 
-            # 配置安全設定 - 暫時使用最寬鬆的設定進行測試
-            # 如果這樣仍然被阻擋，說明是 prompt 內容的問題
+            # 配置安全設定 - 使用適中的安全級別
+            # BLOCK_MEDIUM_AND_ABOVE 適合金融/投資內容
             safety_settings = [
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
                 },
             ]
 
-            logger.debug(f"發送 LLM 請求，prompt 長度: {len(full_prompt)} 字元")
+            logger.debug(f"發送 LLM 請求，prompt 長度: {len(full_prompt)} 字元，記憶數: {len(memories) if memories else 0}")
 
             # 呼叫模型
             response = cls._model.generate_content(
@@ -147,7 +169,8 @@ class LLMService:
                 if text:
                     logger.info(
                         f"LLM 回應成功 (tokens: {len(text.split())}, "
-                        f"finish_reason: {finish_reason_name})"
+                        f"finish_reason: {finish_reason_name}, "
+                        f"memories_used: {len(memories) if memories else 0})"
                     )
                     return text
                 

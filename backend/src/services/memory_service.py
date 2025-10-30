@@ -110,9 +110,9 @@ class MemoryService:
         user_id: str,
         query: str,
         top_k: int = 5,
-    ) -> List[str]:
+    ) -> List[Dict]:
         """
-        搜索記憶
+        搜索記憶（US2 T038）
 
         Args:
             user_id: 使用者 ID
@@ -120,7 +120,7 @@ class MemoryService:
             top_k: 返回結果數量
 
         Returns:
-            List[str]: 記憶內容列表
+            List[Dict]: 記憶字典列表，包含 id, content, metadata
 
         Raises:
             MemoryError: 如果搜索失敗
@@ -136,15 +136,34 @@ class MemoryService:
                 limit=top_k,
             )
 
-            # 提取內容
+            # 提取並轉換為字典格式
             memories = []
-            for result in results:
+            for idx, result in enumerate(results):
                 if isinstance(result, dict):
-                    memories.append(result.get("text", ""))
+                    # 從 Mem0 結果提取信息
+                    memory = {
+                        "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
+                        "content": result.get("text") or result.get("content", ""),
+                        "metadata": {
+                            "relevance": result.get("relevance", 1.0 - (idx * 0.1)),
+                            "created_at": result.get("created_at", ""),
+                            "category": result.get("category", "general"),
+                        },
+                    }
                 else:
-                    memories.append(str(result))
+                    # 如果是字串，轉換為字典
+                    memory = {
+                        "id": f"mem_{idx}",
+                        "content": str(result),
+                        "metadata": {
+                            "relevance": 1.0 - (idx * 0.1),
+                            "category": "general",
+                        },
+                    }
+                
+                memories.append(memory)
 
-            logger.info(f"搜索記憶: user_id={user_id}, found={len(memories)}")
+            logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found={len(memories)}")
             return memories
 
         except Exception as e:

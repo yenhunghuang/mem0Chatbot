@@ -4,9 +4,29 @@
 定義聊天相關的 Pydantic 模型。
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 import uuid
+
+
+class MemoryUsedResponse(BaseModel):
+    """使用的記憶（US2 T041）"""
+
+    id: str = Field(..., description="記憶 ID")
+    content: str = Field(..., description="記憶內容")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="記憶元資料")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "mem_001",
+                "content": "使用者偏好投資科技股",
+                "metadata": {
+                    "relevance": 0.95,
+                    "category": "preference",
+                },
+            }
+        }
 
 
 class ChatRequest(BaseModel):
@@ -68,7 +88,7 @@ class MessageResponse(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """聊天回應"""
+    """聊天回應（US2 T041 - 包含 memories_used）"""
 
     code: str = Field(default="SUCCESS", description="結果代碼")
     message: Optional[str] = Field(None, description="訊息")
@@ -94,7 +114,14 @@ class ChatResponse(BaseModel):
                         "timestamp": "2025-01-01T00:00:05",
                     },
                     "memories_used": [
-                        "我偏好投資科技股",
+                        {
+                            "id": "mem_001",
+                            "content": "使用者偏好投資科技股",
+                            "metadata": {
+                                "relevance": 0.95,
+                                "category": "preference",
+                            },
+                        }
                     ],
                 },
             }
