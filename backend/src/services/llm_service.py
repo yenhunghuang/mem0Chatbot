@@ -94,24 +94,24 @@ class LLMService:
             # 構建提示
             full_prompt = f"{system_prompt}\n使用者：{user_input}\n助理："
 
-            # 配置安全設定 - 使用適中的安全級別
-            # BLOCK_MEDIUM_AND_ABOVE 適合金融/投資內容
+            # 配置安全設定 - 使用寬鬆的安全級別以支援金融/投資內容
+            # BLOCK_ONLY_HIGH 只阻擋最嚴重的內容
             safety_settings = [
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
             ]
 
@@ -138,21 +138,19 @@ class LLMService:
             # 檢查 finish_reason 以判斷是否因為安全原因被阻擋
             if finish_reason and finish_reason_name == "SAFETY":
                 logger.warning(
-                    f"LLM 回應因安全原因被阻擋 (finish_reason=SAFETY)"
+                    f"LLM 回應因安全原因被阻擋 (finish_reason=SAFETY)，使用備用回應"
                 )
-                raise LLMError(
-                    "您的查詢因安全原因被阻擋。請用不同的方式表達您的問題。"
-                )
+                # 返回備用回應而不是拋出異常
+                return "感謝您的提問。為了提供更好的服務，請用不同的方式表達您的問題。"
 
             # 檢查是否有 prompt_feedback 中的阻擋原因
             if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
                 logger.warning(
                     f"LLM 回應被安全過濾器阻擋。"
-                    f"Block reason: {response.prompt_feedback.block_reason}"
+                    f"Block reason: {response.prompt_feedback.block_reason}，使用備用回應"
                 )
-                raise LLMError(
-                    "您的查詢被安全過濾器識別為不適當的內容。請用不同的方式表達您的問題。"
-                )
+                # 返回備用回應而不是拋出異常
+                return "感謝您的提問。我們無法處理此請求，請稍後重試或使用不同的方式表達。"
 
             # 安全地取得回應文本，避免觸發快速訪問器異常
             try:
@@ -207,11 +205,12 @@ class LLMService:
                 if candidate_finish_reason:
                     candidate_finish_reason_name = candidate_finish_reason.name if hasattr(candidate_finish_reason, 'name') else str(candidate_finish_reason)
                     if candidate_finish_reason_name == "SAFETY":
-                        logger.warning("候選者因安全原因被阻擋")
-                        raise LLMError("您的查詢因安全原因被阻擋。請用不同的方式表達您的問題。")
+                        logger.warning("候選者因安全原因被阻擋，使用備用回應")
+                        return "感謝您的提問。為了提供更好的服務，請用不同的方式表達您的問題。"
                 
-                # 回應為空，可能是由於內容審核或其他原因
-                raise LLMError("LLM 回應為空，請稍後重試。")
+                # 回應為空，可能是由於內容審核或其他原因，返回備用回應
+                logger.warning("LLM 回應為空，返回備用回應")
+                return "感謝您的提問。請稍後重試。"
             except ValueError as e:
                 # 這通常是由 response.text 快速訪問器拋出的
                 logger.error(
