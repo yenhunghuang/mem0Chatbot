@@ -138,36 +138,57 @@ class MemoryService:
 
             # 提取並轉換為字典格式
             memories = []
+            
+            if not results:
+                logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found=0")
+                return memories
+
             for idx, result in enumerate(results):
                 if isinstance(result, dict):
                     # 從 Mem0 結果提取信息
+                    # 嘗試多種可能的欄位名稱來取得內容
+                    content = (
+                        result.get("data") or 
+                        result.get("content") or 
+                        result.get("text") or 
+                        result.get("document", "")
+                    )
+                    
+                    # 如果內容為空，嘗試從 metadata 中的 data 欄位
+                    if not content and isinstance(result.get("metadata"), dict):
+                        content = result.get("metadata", {}).get("data", "")
+                    
                     memory = {
                         "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
-                        "content": result.get("text") or result.get("content", ""),
+                        "content": str(content).strip() if content else "",
                         "metadata": {
-                            "relevance": result.get("relevance", 1.0 - (idx * 0.1)),
+                            "relevance": result.get("relevance", 1.0 - (idx * 0.15)),
                             "created_at": result.get("created_at", ""),
                             "category": result.get("category", "general"),
+                            **result.get("metadata", {}),  # 合併原有的 metadata
                         },
                     }
                 else:
                     # 如果是字串，轉換為字典
                     memory = {
                         "id": f"mem_{idx}",
-                        "content": str(result),
+                        "content": str(result).strip() if result else "",
                         "metadata": {
-                            "relevance": 1.0 - (idx * 0.1),
+                            "relevance": 1.0 - (idx * 0.15),
                             "category": "general",
                         },
                     }
                 
-                memories.append(memory)
+                # 只新增有內容的記憶
+                if memory["content"]:
+                    memories.append(memory)
 
             logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found={len(memories)}")
             return memories
 
         except Exception as e:
             logger.error(f"搜索記憶失敗: {str(e)}")
+            logger.debug(f"詳細錯誤: {type(e).__name__}")
             # 返回空列表而不是拋出異常，以實現降級
             return []
 
@@ -247,7 +268,7 @@ class MemoryService:
                 cls.initialize()
 
             # 如果訊息過短，跳過記憶擷取
-            if not message_content or len(message_content.strip()) < 5:
+            if not message_content or len(message_content.strip()) < 3:
                 logger.debug(f"訊息過短，跳過記憶擷取: length={len(message_content)}")
                 return None
 
@@ -269,18 +290,29 @@ class MemoryService:
                 metadata=meta,
             )
 
-            memory_id = result.get("memory_id") if isinstance(result, dict) else None
-
+            # 提取 memory_id，處理多種結果格式
+            memory_id = None
+            if isinstance(result, dict):
+                memory_id = result.get("memory_id") or result.get("id")
+            elif isinstance(result, str):
+                memory_id = result
+            
             if memory_id:
                 logger.info(
-                    f"記憶已從訊息擷取: user_id={user_id}, memory_id={memory_id}"
+                    f"✅ 記憶已從訊息擷取: user_id={user_id[:8]}..., "
+                    f"memory_id={memory_id}, content={message_content[:50]}..."
                 )
                 return memory_id
             else:
-                logger.debug(f"訊息未包含可儲存的記憶: user_id={user_id}")
+                logger.debug(
+                    f"⚠️ 訊息未包含可儲存的記憶或 Mem0 無返回: user_id={user_id[:8]}..."
+                )
                 return None
 
         except Exception as e:
-            logger.error(f"從訊息擷取記憶失敗: {str(e)}")
+            logger.warning(
+                f"⚠️ 從訊息擷取記憶失敗: user_id={user_id[:8]}..., "
+                f"error={str(e)[:100]}"
+            )
             # 不拋出異常，允許聊天繼續進行
             return None
