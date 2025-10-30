@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投資顧問助理 - 聊天</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 標題區 -->
+    <header class="header">
+      <div class="header-content">
+        <h1>投資顧問助理</h1>
+        <p>AI 驅動的個人化投資建議</p>
+      </div>
+      <button id="newChatBtn" class="btn-new-chat" title="開始新對話">
+        <span>+</span> 新對話
+      </button>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="main">
+      <!-- 聊天區 -->
+      <div class="chat-container">
+        <!-- 訊息顯示區 -->
+        <div class="messages" id="messages">
+          <div class="message system">
+            <p>歡迎使用投資顧問助理！您可以詢問任何投資相關問題，我會根據您的偏好提供個人化建議。</p>
+          </div>
+          <div class="message system">
+            <p>💡 提示：告訴我您的投資偏好、風險承受度或具體的投資問題，系統將自動記住您的信息。</p>
+          </div>
+        </div>
+
+        <!-- 輸入區 -->
+        <div class="input-area">
+          <form id="messageForm" class="message-form">
+            <div class="input-wrapper">
+              <textarea
+                id="messageInput"
+                class="message-input"
+                placeholder="輸入您的訊息或投資問題..."
+                rows="3"
+              ></textarea>
+              <button
+                type="submit"
+                class="btn-send"
+                id="sendBtn"
+                title="發送訊息 (Ctrl+Enter)"
+              >
+                發送
+              </button>
+            </div>
+          </form>
+
+          <!-- 狀態提示 -->
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+
+      <!-- 側邊欄 - 記憶 (可選) -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h3>使用的記憶</h3>
+        </div>
+        <div class="memories" id="memories">
+          <p class="empty">目前沒有使用的記憶</p>
+        </div>
+      </aside>
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="footer">
+      <p>© 2025 投資顧問助理。所有回應僅供參考，不構成投資建議。</p>
+    </footer>
+  </div>
+
+  <!-- 載入指示器 -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>正在處理您的請求...</p>
+  </div>
+
+  <!-- 錯誤提示 -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <!-- 指令碼 -->
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

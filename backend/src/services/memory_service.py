@@ -195,3 +195,70 @@ class MemoryService:
         except Exception as e:
             logger.error(f"刪除記憶失敗: {str(e)}")
             return False
+
+    @classmethod
+    def add_memory_from_message(
+        cls,
+        user_id: str,
+        message_content: str,
+        metadata: Optional[Dict] = None,
+    ) -> Optional[str]:
+        """
+        從訊息中自動擷取並儲存記憶
+
+        此方法分析訊息內容，自動識別投資偏好和相關信息，
+        並將其儲存為長期記憶。
+
+        Args:
+            user_id: 使用者 ID
+            message_content: 訊息內容
+            metadata: 附加中繼資料
+
+        Returns:
+            Optional[str]: 記憶 ID，如果擷取失敗則返回 None
+
+        Raises:
+            MemoryError: 如果新增失敗
+        """
+        try:
+            if cls._mem0_client is None:
+                cls.initialize()
+
+            # 如果訊息過短，跳過記憶擷取
+            if not message_content or len(message_content.strip()) < 5:
+                logger.debug(f"訊息過短，跳過記憶擷取: length={len(message_content)}")
+                return None
+
+            # 準備中繼資料
+            meta = metadata or {}
+            meta["source"] = "user_message"
+            meta["user_id"] = user_id
+
+            # 呼叫 Mem0 以自動擷取記憶
+            # Mem0 會根據內容分析是否有值得儲存的信息
+            result = cls._mem0_client.add(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": message_content,
+                    }
+                ],
+                user_id=user_id,
+                metadata=meta,
+            )
+
+            memory_id = result.get("memory_id") if isinstance(result, dict) else None
+
+            if memory_id:
+                logger.info(
+                    f"記憶已從訊息擷取: user_id={user_id}, memory_id={memory_id}"
+                )
+                return memory_id
+            else:
+                logger.debug(f"訊息未包含可儲存的記憶: user_id={user_id}")
+                return None
+
+        except Exception as e:
+            logger.error(f"從訊息擷取記憶失敗: {str(e)}")
+            # 不拋出異常，允許聊天繼續進行
+            return None

@@ -271,6 +271,12 @@ async def health_check():
     }
 
 
+# 註冊路由
+from .api.routes import chat as chat_routes
+
+app.include_router(chat_routes.router)
+
+
 # 根路由
 @app.get("/", tags=["Root"])
 async def root():

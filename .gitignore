@@ -87,3 +87,4 @@ build/
 .coverage
 htmlcov/
 .venv/
+.claude/settings.local.json

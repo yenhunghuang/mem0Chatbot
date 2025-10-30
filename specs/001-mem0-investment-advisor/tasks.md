@@ -17,12 +17,12 @@
 
 **Purpose**: 專案初始化與基本結構建立
 
-- [ ] T001 依照實作計劃建立專案目錄結構（backend/src/, frontend/, tests/, data/）
-- [ ] T002 初始化 Python 3.12 專案，建立 backend/requirements.txt 包含 FastAPI, Mem0, Google SDKs, ChromaDB, SQLite, pytest 依賴
-- [ ] T003 [P] 建立 backend/.env.example 範本檔案，包含 GOOGLE_API_KEY, DATABASE_URL, CHROMA_PATH 環境變數
-- [ ] T004 [P] 建立 backend/src/config/settings.py 使用 pydantic-settings 載入環境變數
-- [ ] T005 [P] 配置 ruff 和 black 格式化工具（backend/pyproject.toml）
-- [ ] T006 [P] 建立 .gitignore 排除 data/, .env, __pycache__, .pytest_cache
+- [x] T001 依照實作計劃建立專案目錄結構（backend/src/, frontend/, tests/, data/）
+- [x] T002 初始化 Python 3.12 專案，建立 backend/requirements.txt 包含 FastAPI, Mem0, Google SDKs, ChromaDB, SQLite, pytest 依賴
+- [x] T003 [P] 建立 backend/.env.example 範本檔案，包含 GOOGLE_API_KEY, DATABASE_URL, CHROMA_PATH 環境變數
+- [x] T004 [P] 建立 backend/src/config/settings.py 使用 pydantic-settings 載入環境變數
+- [x] T005 [P] 配置 ruff 和 black 格式化工具（backend/pyproject.toml）
+- [x] T006 [P] 建立 .gitignore 排除 data/, .env, __pycache__, .pytest_cache
 
 ---
 
@@ -32,17 +32,17 @@
 
 **⚠️ CRITICAL**: 在此階段完成前，任何使用者故事工作都不能開始
 
-- [ ] T007 建立 backend/src/utils/logger.py 實作統一日誌記錄器
-- [ ] T008 [P] 建立 backend/src/utils/exceptions.py 定義自訂例外類別（ValidationError, MemoryError, LLMError）
-- [ ] T009 建立 backend/src/storage/database.py 實作 SQLite 連線管理與 WAL 模式設定
-- [ ] T010 [P] 建立 backend/src/storage/schema.sql 定義 conversations 和 messages 資料表結構
-- [ ] T011 實作 backend/src/storage/database.py 中的 init_database() 函式執行 schema.sql
-- [ ] T012 [P] 建立 backend/src/services/embedding_service.py 整合 Google Embeddings API (gemini-embedding-001)
-- [ ] T013 [P] 建立 backend/src/services/llm_service.py 整合 Google Gemini 2.5 Flash SDK
-- [ ] T014 建立 backend/src/services/memory_service.py 初始化 Mem0 客戶端（Chroma backend + Google Embeddings）
-- [ ] T015 建立 backend/src/api/schemas/__init__.py 和 backend/src/api/schemas/common.py 定義錯誤回應 schema
-- [ ] T016 建立 backend/src/main.py FastAPI 應用入口，設定 CORS, exception handlers, 註冊路由
-- [ ] T017 [P] 建立 backend/tests/conftest.py 配置 pytest fixtures（mock_mem0, mock_llm, test_db, test_client）
+- [x] T007 建立 backend/src/utils/logger.py 實作統一日誌記錄器
+- [x] T008 [P] 建立 backend/src/utils/exceptions.py 定義自訂例外類別（ValidationError, MemoryError, LLMError）
+- [x] T009 建立 backend/src/storage/database.py 實作 SQLite 連線管理與 WAL 模式設定
+- [x] T010 [P] 建立 backend/src/storage/schema.sql 定義 conversations 和 messages 資料表結構
+- [x] T011 實作 backend/src/storage/database.py 中的 init_database() 函式執行 schema.sql
+- [x] T012 [P] 建立 backend/src/services/embedding_service.py 整合 Google Embeddings API (gemini-embedding-001)
+- [x] T013 [P] 建立 backend/src/services/llm_service.py 整合 Google Gemini 2.5 Flash SDK
+- [x] T014 建立 backend/src/services/memory_service.py 初始化 Mem0 客戶端（Chroma backend + Google Embeddings）
+- [x] T015 建立 backend/src/api/schemas/__init__.py 和 backend/src/api/schemas/common.py 定義錯誤回應 schema
+- [x] T016 建立 backend/src/main.py FastAPI 應用入口，設定 CORS, exception handlers, 註冊路由
+- [x] T017 [P] 建立 backend/tests/conftest.py 配置 pytest fixtures（mock_mem0, mock_llm, test_db, test_client）
 
 **Checkpoint**: 基礎就緒 - 使用者故事實作現在可以平行開始
 
@@ -58,26 +58,26 @@
 
 > **NOTE: 先寫這些測試，確保在實作前它們會 FAIL**
 
-- [ ] T018 [P] [US1] 建立 backend/tests/unit/test_memory_service.py，測試 add_memory() 方法正確呼叫 Mem0 SDK
-- [ ] T019 [P] [US1] 建立 backend/tests/unit/test_storage_service.py，測試 save_conversation() 和 save_message() 的 SQLite 操作
-- [ ] T020 [P] [US1] 建立 backend/tests/integration/test_chat_flow.py，測試完整對話流程（使用者訊息 → 記憶擷取 → LLM 回應 → 儲存）
-- [ ] T021 [P] [US1] 建立 backend/tests/api/test_chat_endpoints.py，測試 POST /api/v1/chat 端點的請求/回應格式
+- [x] T018 [P] [US1] 建立 backend/tests/unit/test_memory_service.py，測試 add_memory() 方法正確呼叫 Mem0 SDK
+- [x] T019 [P] [US1] 建立 backend/tests/unit/test_storage_service.py，測試 save_conversation() 和 save_message() 的 SQLite 操作
+- [x] T020 [P] [US1] 建立 backend/tests/integration/test_chat_flow.py，測試完整對話流程（使用者訊息 → 記憶擷取 → LLM 回應 → 儲存）
+- [x] T021 [P] [US1] 建立 backend/tests/api/test_chat_endpoints.py，測試 POST /api/v1/chat 端點的請求/回應格式
 
 ### Implementation for User Story 1
 
-- [ ] T022 [P] [US1] 建立 backend/src/models/conversation.py 定義 ConversationDB, MessageDB dataclass
-- [ ] T023 [P] [US1] 建立 backend/src/api/schemas/chat.py 定義 ChatRequest, ChatResponse, MessageResponse Pydantic 模型
-- [ ] T024 [US1] 實作 backend/src/storage/storage_service.py 的 create_conversation(), save_message(), get_conversation() 方法
-- [ ] T025 [US1] 實作 backend/src/services/memory_service.py 的 add_memory_from_message() 方法（呼叫 Mem0.add()）
-- [ ] T026 [US1] 實作 backend/src/services/conversation_service.py 協調對話流程（儲存訊息 → 擷取記憶 → 呼叫 LLM → 儲存回應）
-- [ ] T027 [US1] 實作 backend/src/api/routes/chat.py 的 POST /chat 端點，整合 conversation_service
-- [ ] T028 [US1] 在 conversation_service 中加入輸入驗證（UUID 格式、訊息長度 1-10000 字元）
-- [ ] T029 [US1] 在 chat.py 端點加入錯誤處理（400 驗證錯誤, 500 內部錯誤, 503 LLM 不可用）
-- [ ] T030 [US1] 在 conversation_service 關鍵操作加入日誌記錄（對話建立、記憶擷取、LLM 呼叫）
-- [ ] T031 [P] [US1] 建立 frontend/js/storage.js 實作 getUserId() 使用 crypto.randomUUID() 和 localStorage
-- [ ] T032 [P] [US1] 建立 frontend/js/api.js 實作 sendMessage(userId, conversationId, message) API 客戶端
-- [ ] T033 [US1] 建立 frontend/index.html 和 frontend/css/style.css 簡單聊天介面（訊息列表 + 輸入框）
-- [ ] T034 [US1] 建立 frontend/js/app.js 整合 storage.js 和 api.js，處理使用者輸入和顯示回應
+- [x] T022 [P] [US1] 建立 backend/src/models/conversation.py 定義 ConversationDB, MessageDB dataclass
+- [x] T023 [P] [US1] 建立 backend/src/api/schemas/chat.py 定義 ChatRequest, ChatResponse, MessageResponse Pydantic 模型
+- [x] T024 [US1] 實作 backend/src/storage/storage_service.py 的 create_conversation(), save_message(), get_conversation() 方法
+- [x] T025 [US1] 實作 backend/src/services/memory_service.py 的 add_memory_from_message() 方法（呼叫 Mem0.add()）
+- [x] T026 [US1] 實作 backend/src/services/conversation_service.py 協調對話流程（儲存訊息 → 擷取記憶 → 呼叫 LLM → 儲存回應）
+- [x] T027 [US1] 實作 backend/src/api/routes/chat.py 的 POST /chat 端點，整合 conversation_service
+- [x] T028 [US1] 在 conversation_service 中加入輸入驗證（UUID 格式、訊息長度 1-10000 字元）
+- [x] T029 [US1] 在 chat.py 端點加入錯誤處理（400 驗證錯誤, 500 內部錯誤, 503 LLM 不可用）
+- [x] T030 [US1] 在 conversation_service 關鍵操作加入日誌記錄（對話建立、記憶擷取、LLM 呼叫）
+- [x] T031 [P] [US1] 建立 frontend/js/storage.js 實作 getUserId() 使用 crypto.randomUUID() 和 localStorage
+- [x] T032 [P] [US1] 建立 frontend/js/api.js 實作 sendMessage(userId, conversationId, message) API 客戶端
+- [x] T033 [US1] 建立 frontend/index.html 和 frontend/css/style.css 簡單聊天介面（訊息列表 + 輸入框）
+- [x] T034 [US1] 建立 frontend/js/app.js 整合 storage.js 和 api.js，處理使用者輸入和顯示回應
 
 **Checkpoint**: 此時使用者故事 1 應完全可用並可獨立測試
 
