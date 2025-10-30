@@ -73,7 +73,7 @@ class LLMService:
             # 構建提示
             full_prompt = f"{system_prompt}\n使用者：{user_input}\n助理："
 
-            # 配置安全設定（完整的 5 個類別）
+            # 配置安全設定（Google Gemini 支持的 5 個類別）
             # 使用 BLOCK_ONLY_HIGH 平衡安全性和可用性
             safety_settings = [
                 {
@@ -81,23 +81,19 @@ class LLMService:
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_DEROGATORY,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_VIOLENCE,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUAL,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_MEDICAL,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                },
-                {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
             ]
@@ -185,30 +181,26 @@ class LLMService:
 
 提取的偏好:"""
 
-            # 配置安全設定（完整的 6 個類別）
+            # 配置安全設定（Google Gemini 支持的 5 個類別）
             safety_settings = [
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_UNSPECIFIED,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_DEROGATORY,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_VIOLENCE,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUAL,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
                 {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_MEDICAL,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
-                },
-                {
-                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS,
+                    "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
                     "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
                 },
             ]
