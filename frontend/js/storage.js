@@ -40,13 +40,13 @@ function getUserId() {
 /**
  * 取得對話 ID
  * 
- * @returns {number|null} 對話 ID，如果未設定則返回 null
+ * @returns {string|null} 對話 ID (UUID format)，如果未設定則返回 null
  */
 function getConversationId() {
   const conversationId = localStorage.getItem(CONVERSATION_ID_KEY);
   
   if (conversationId) {
-    return parseInt(conversationId, 10);
+    return conversationId;
   }
   
   return null;
@@ -55,7 +55,7 @@ function getConversationId() {
 /**
  * 設定對話 ID
  * 
- * @param {number} conversationId - 對話 ID
+ * @param {string} conversationId - 對話 ID (UUID)
  */
 function setConversationId(conversationId) {
   localStorage.setItem(CONVERSATION_ID_KEY, conversationId.toString());
