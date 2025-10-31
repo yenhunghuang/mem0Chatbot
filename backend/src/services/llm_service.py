@@ -63,24 +63,34 @@ class LLMService:
 """
 
             # 新增記憶上下文（US2 T039）
-            if memories:
+            if memories and len(memories) > 0:
                 logger.info(f"🧠 注入記憶: 共 {len(memories)} 個")
-                memory_context = "\n使用者的投資偏好和已知信息：\n"
+                
+                # 提取實際的記憶內容
+                memory_contents = []
                 for idx, memory in enumerate(memories):
                     # 支援字典格式（新增）或字串格式（舊版本相容）
                     if isinstance(memory, dict):
                         content = memory.get("content", "")
-                        logger.debug(f"  [{idx+1}] 記憶 ID: {memory.get('id', 'N/A')}, Content: {content[:50]}")
                     else:
                         content = str(memory)
-                        logger.debug(f"  [{idx+1}] 字串記憶: {content[:50]}")
                     
                     if content:
-                        memory_context += f"• {content}\n"
+                        memory_contents.append(content)
+                        logger.debug(f"  [{idx+1}] 記憶 ID: {memory.get('id', 'N/A') if isinstance(memory, dict) else 'N/A'}, Content: {content[:50]}")
                 
-                system_prompt += memory_context
+                # 只有當有實際記憶內容時，才添加到 system prompt
+                if memory_contents:
+                    memory_context = "已知的使用者信息與投資偏好：\n"
+                    for content in memory_contents:
+                        memory_context += f"• {content}\n"
+                    memory_context += "\n請基於上述使用者信息提供個人化的投資建議。\n"
+                    system_prompt += memory_context
+                    logger.info(f"✓ 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
+                else:
+                    logger.warning(f"⚠️ 記憶結果有 {len(memories)} 個但內容全為空")
             else:
-                logger.info("🧠 未注入記憶 (memories 為空或 None)")
+                logger.info("ℹ️ 未找到記憶 (memories 為空或 None)")
 
             # 構建對話歷史上下文
             history_context = ""
@@ -97,7 +107,22 @@ class LLMService:
                 system_prompt += history_context
 
             # 構建提示
-            full_prompt = f"{system_prompt}\n使用者：{user_input}\n助理："
+            full_prompt = f"""{system_prompt}
+
+【對話記錄】
+{history_context if history_context else "(首次對話)"}
+
+【當前提問】
+{user_input}
+
+【要求】
+- 請基於已知的使用者信息（如果提供）來個人化回應
+- 避免重複詢問已知的信息
+- 提供具體的投資建議而非泛泛而談
+- 如果尚缺相關信息，可詢問但要指出已知內容
+
+【回應】
+"""
 
             # 配置安全設定 - 使用寬鬆的安全級別以支援金融/投資內容
             # BLOCK_ONLY_HIGH 只阻擋最嚴重的內容
