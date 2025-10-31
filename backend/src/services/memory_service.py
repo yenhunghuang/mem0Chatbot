@@ -151,17 +151,33 @@ class MemoryService:
             for idx, result in enumerate(results):
                 if isinstance(result, dict):
                     # 從 Mem0 結果提取信息
-                    # 嘗試多種可能的欄位名稱來取得內容
-                    content = (
-                        result.get("data") or 
-                        result.get("content") or 
-                        result.get("text") or 
-                        result.get("document", "")
-                    )
+                    # 優先順序：document > content > text > data > metadata.data
+                    content = None
                     
-                    # 如果內容為空，嘗試從 metadata 中的 data 欄位
+                    # 第 1 層：直接欄位
+                    if result.get("document"):
+                        content = result.get("document")
+                        logger.debug(f"[{idx}] 從 document 提取: {str(content)[:50]}")
+                    elif result.get("content"):
+                        content = result.get("content")
+                        logger.debug(f"[{idx}] 從 content 提取: {str(content)[:50]}")
+                    elif result.get("text"):
+                        content = result.get("text")
+                        logger.debug(f"[{idx}] 從 text 提取: {str(content)[:50]}")
+                    elif result.get("data"):
+                        content = result.get("data")
+                        logger.debug(f"[{idx}] 從 data 提取: {str(content)[:50]}")
+                    
+                    # 第 2 層：metadata 中的 data（關鍵備用方案）
                     if not content and isinstance(result.get("metadata"), dict):
-                        content = result.get("metadata", {}).get("data", "")
+                        metadata = result.get("metadata", {})
+                        if metadata.get("data"):
+                            content = metadata.get("data")
+                            logger.debug(f"[{idx}] 從 metadata.data 提取: {str(content)[:50]}")
+                    
+                    # 最後備用：嘗試使用整個結果作為字符串
+                    if not content:
+                        logger.warning(f"[{idx}] 警告：未找到任何有效內容，結果 keys: {result.keys()}")
                     
                     memory = {
                         "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
@@ -170,11 +186,11 @@ class MemoryService:
                             "relevance": result.get("relevance", 1.0 - (idx * 0.15)),
                             "created_at": result.get("created_at", ""),
                             "category": result.get("category", "general"),
-                            **result.get("metadata", {}),  # 合併原有的 metadata
+                            **(result.get("metadata", {}) if isinstance(result.get("metadata"), dict) else {}),
                         },
                     }
                 else:
-                    # 如果是字串，轉換為字典
+                    # 如果是字符串，直接使用
                     memory = {
                         "id": f"mem_{idx}",
                         "content": str(result).strip() if result else "",
@@ -187,6 +203,9 @@ class MemoryService:
                 # 只新增有內容的記憶
                 if memory["content"]:
                     memories.append(memory)
+                    logger.debug(f"✓ 記憶已添加: {memory['id'][:20]}... content={memory['content'][:40]}")
+                else:
+                    logger.warning(f"✗ 記憶內容為空，跳過: {memory['id']}")
 
             logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found={len(memories)}")
             return memories
