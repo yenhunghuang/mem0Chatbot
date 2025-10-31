@@ -33,7 +33,7 @@ class ChatRequest(BaseModel):
     """聊天請求"""
 
     user_id: str = Field(..., description="使用者 UUID")
-    conversation_id: Optional[int] = Field(None, description="對話 ID（無則建立新對話）")
+    conversation_id: Optional[str] = Field(None, description="對話 ID UUID（無則建立新對話）")
     message: str = Field(..., min_length=1, max_length=10000, description="使用者訊息")
 
     @field_validator("user_id")
@@ -68,7 +68,7 @@ class MessageResponse(BaseModel):
     """訊息回應"""
 
     id: int = Field(..., description="訊息 ID")
-    conversation_id: int = Field(..., description="對話 ID")
+    conversation_id: str = Field(..., description="對話 ID UUID")
     role: str = Field(..., description="角色 (user/assistant)")
     content: str = Field(..., description="訊息內容")
     timestamp: str = Field(..., description="時間戳記 (ISO 8601)")
@@ -131,7 +131,7 @@ class ChatResponse(BaseModel):
 class ConversationResponse(BaseModel):
     """對話回應"""
 
-    id: int = Field(..., description="對話 ID")
+    id: str = Field(..., description="對話 ID UUID")
     user_id: str = Field(..., description="使用者 ID")
     created_at: str = Field(..., description="建立時間")
     last_activity: str = Field(..., description="最後活動時間")
