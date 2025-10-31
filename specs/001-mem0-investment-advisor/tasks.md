@@ -83,28 +83,34 @@
 
 ---
 
-## Phase 4: User Story 2 - 記憶檢索與個人化回應 (Priority: P2)
+## Phase 4: User Story 2 - 記憶檢索與個人化回應 (Priority: P2) ✅ COMPLETED
 
 **Goal**: 使用者詢問投資建議時，系統從 Mem0 檢索相關偏好並提供個人化回應
 
 **Independent Test**: 在已建立記憶的基礎上，發送投資建議請求（如「幫我推薦股票」），檢查回應是否提及先前儲存的偏好
 
-### Tests for User Story 2 (REQUIRED per Constitution) ⚠️
+### Tests for User Story 2 (REQUIRED per Constitution) ⚠️ ✅
 
-- [ ] T035 [P] [US2] 建立 backend/tests/unit/test_memory_service_search.py，測試 search_memories() 方法正確呼叫 Mem0.search()
-- [ ] T036 [P] [US2] 建立 backend/tests/integration/test_memory_retrieval.py，測試記憶檢索與 LLM 上下文整合流程
-- [ ] T037 [P] [US2] 在 backend/tests/api/test_chat_endpoints.py 新增測試案例，驗證 memories_used 欄位包含相關記憶
+- [x] T035 [P] [US2] 建立 backend/tests/unit/test_memory_service_search.py，測試 search_memories() 方法正確呼叫 Mem0.search() - 11/11 tests passed
+- [x] T036 [P] [US2] 建立 backend/tests/integration/test_memory_retrieval.py，測試記憶檢索與 LLM 上下文整合流程 - 10/10 tests passed
+- [x] T037 [P] [US2] 在 backend/tests/api/test_chat_endpoints.py 新增測試案例，驗證 memories_used 欄位包含相關記憶 - 10/10 tests passed
 
-### Implementation for User Story 2
+### Implementation for User Story 2 ✅
 
-- [ ] T038 [US2] 實作 backend/src/services/memory_service.py 的 search_memories(user_id, query, top_k) 方法
-- [ ] T039 [US2] 修改 backend/src/services/llm_service.py 的 generate_response() 加入 memories 參數，構建包含記憶上下文的 prompt
-- [ ] T040 [US2] 修改 backend/src/services/conversation_service.py 的對話流程，在呼叫 LLM 前先檢索最新 N 條記憶（N=5）
-- [ ] T041 [US2] 修改 backend/src/api/schemas/chat.py 的 ChatResponse，確保 memories_used 欄位包含使用的記憶內容清單
-- [ ] T042 [US2] 在 conversation_service 加入記憶檢索失敗時的降級處理（返回通用投資教育內容）
-- [ ] T043 [US2] 修改 frontend/js/app.js 顯示 memories_used 資訊（選用，可在開發工具 console 顯示）
+- [x] T038 [US2] 實作 backend/src/services/memory_service.py 的 search_memories(user_id, query, top_k) 方法 - 支援 Mem0.search()、詳細的結果處理、fallback
+- [x] T039 [US2] 修改 backend/src/services/llm_service.py 的 generate_response() 加入 memories 參數，構建包含記憶上下文的 prompt - 支援字典格式記憶、相關度徽章、安全設定
+- [x] T040 [US2] 修改 backend/src/services/conversation_service.py 的對話流程，在呼叫 LLM 前先檢索最新 N 條記憶（N=5） - 完整步驟 5 實作，日誌記錄詳細
+- [x] T041 [US2] 修改 backend/src/api/schemas/chat.py 的 ChatResponse，確保 memories_used 欄位包含使用的記憶內容清單 - MemoryUsedResponse 模型、ChatDataResponse 包含 memories_used
+- [x] T042 [US2] 在 conversation_service 加入記憶檢索失敗時的降級處理（返回通用投資教育內容） - search_memories() 返回空列表、LLM 使用通用回應
+- [x] T043 [US2] 修改 frontend/js/app.js 顯示 memories_used 資訊（選用，可在開發工具 console 顯示） - updateMemoriesDisplay() 支援字典和字串格式、相關度百分比、console 日誌
 
-**Checkpoint**: 此時使用者故事 1 和 2 都應獨立運作
+**Test Results Summary**:
+- Unit tests (T035): 11 PASSED ✅
+- Integration tests (T036): 10 PASSED ✅
+- API tests for memories_used (T037): 10 PASSED ✅
+- **Total Phase 4 Tests: 31 PASSED** ✅
+
+**Checkpoint**: 此時使用者故事 1 和 2 都應獨立運作 ✅ VERIFIED
 
 ---
 
