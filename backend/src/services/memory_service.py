@@ -143,6 +143,11 @@ class MemoryService:
                 logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found=0")
                 return memories
 
+            # 調試：記錄原始結果
+            logger.debug(f"搜索原始結果數: {len(results)}, 第一個結果類型: {type(results[0]) if results else 'None'}")
+            if results and isinstance(results[0], dict):
+                logger.debug(f"第一個結果 keys: {results[0].keys()}")
+
             for idx, result in enumerate(results):
                 if isinstance(result, dict):
                     # 從 Mem0 結果提取信息

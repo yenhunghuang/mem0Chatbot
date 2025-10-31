@@ -64,18 +64,23 @@ class LLMService:
 
             # 新增記憶上下文（US2 T039）
             if memories:
+                logger.info(f"🧠 注入記憶: 共 {len(memories)} 個")
                 memory_context = "\n使用者的投資偏好和已知信息：\n"
-                for memory in memories:
+                for idx, memory in enumerate(memories):
                     # 支援字典格式（新增）或字串格式（舊版本相容）
                     if isinstance(memory, dict):
                         content = memory.get("content", "")
+                        logger.debug(f"  [{idx+1}] 記憶 ID: {memory.get('id', 'N/A')}, Content: {content[:50]}")
                     else:
                         content = str(memory)
+                        logger.debug(f"  [{idx+1}] 字串記憶: {content[:50]}")
                     
                     if content:
                         memory_context += f"• {content}\n"
                 
                 system_prompt += memory_context
+            else:
+                logger.info("🧠 未注入記憶 (memories 為空或 None)")
 
             # 構建對話歷史上下文
             history_context = ""
