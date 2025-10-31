@@ -93,11 +93,11 @@ class LLMService:
                         memory_context += f"• {content}\n"
                     memory_context += "\n請基於上述使用者信息提供個人化的投資建議。\n"
                     system_prompt += memory_context
-                    logger.info(f"✅ 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
+                    logger.info(f"✅ [LLM] 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
                 else:
-                    logger.warning(f"⚠️ 記憶結果有 {len(memories)} 個但內容全為空")
+                    logger.warning(f"⚠️ [LLM] 記憶結果有 {len(memories)} 個但內容全為空")
             else:
-                logger.info(f"ℹ️ 未找到記憶 (memories 為空或 None), memories={memories!r}")
+                logger.info(f"ℹ️ [LLM] 未找到記憶 (memories 為空或 None), memories={memories!r}")
 
             # 構建對話歷史上下文
             history_context = ""
@@ -202,10 +202,14 @@ class LLMService:
                 
                 # 如果成功取得文本
                 if text:
+                    # 計算實際注入的記憶數
+                    actual_memories_used = len([m for m in (memories or []) if m and m.get("content", "").strip()]) if memories else 0
+                    
                     logger.info(
-                        f"LLM 回應成功 (tokens: {len(text.split())}, "
+                        f"✅ [LLM] 回應成功 (tokens: {len(text.split())}, "
                         f"finish_reason: {finish_reason_name}, "
-                        f"memories_used: {len(memories) if memories else 0})"
+                        f"memories_injected: {actual_memories_used}, "
+                        f"memories_searched: {len(memories) if memories else 0})"
                     )
                     return text
                 

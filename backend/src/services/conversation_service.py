@@ -208,6 +208,7 @@ class ConversationService:
             )
 
             # 步驟 4: 從訊息擷取記憶（非阻塞）
+            logger.info(f"📝 [對話 {conversation.id}] 開始提取記憶... user_id={user_id[:8]}..., message={message[:30]!r}...")
             memory_id = None
             try:
                 memory_id = MemoryService.add_memory_from_message(
@@ -217,12 +218,18 @@ class ConversationService:
                 )
                 if memory_id:
                     logger.info(
-                        f"[對話 {conversation.id}] 記憶已擷取: memory_id={memory_id}"
+                        f"✅ [對話 {conversation.id}] 記憶已提取並儲存: memory_id={memory_id}"
+                    )
+                else:
+                    logger.info(
+                        f"ℹ️ [對話 {conversation.id}] Mem0 未提取到可儲存的偏好"
                     )
             except Exception as e:
                 logger.warning(
-                    f"[對話 {conversation.id}] 記憶擷取失敗 (非阻塞): {str(e)}"
+                    f"⚠️ [對話 {conversation.id}] 記憶提取失敗 (非阻塞): {str(e)}"
                 )
+                import traceback
+                logger.debug(f"   記憶提取錯誤堆棧: {traceback.format_exc()}")
 
             # 步驟 5: 搜索相關記憶
             memories_used = []
