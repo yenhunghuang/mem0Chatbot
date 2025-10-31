@@ -211,8 +211,9 @@ class MemoryService:
             return memories
 
         except Exception as e:
-            logger.error(f"搜索記憶失敗: {str(e)}")
-            logger.debug(f"詳細錯誤: {type(e).__name__}")
+            logger.error(f"搜索記憶失敗: {type(e).__name__}: {str(e)[:100]}")
+            import traceback
+            logger.debug(f"詳細錯誤堆棧: {traceback.format_exc()}")
             # 返回空列表而不是拋出異常，以實現降級
             return []
 
@@ -293,17 +294,17 @@ class MemoryService:
 
             # 如果訊息過短，跳過記憶擷取
             if not message_content or len(message_content.strip()) < 3:
-                logger.info(f"⏭️ 訊息過短，跳過記憶擷取: length={len(message_content)}")
+                logger.info(f"[Mem0] 訊息過短，跳過記憶擷取: length={len(message_content)}")
                 return None
 
-            logger.info(f"🔎 [Mem0] 開始提取偏好: message={message_content[:50]!r}...")
+            logger.info(f"[Mem0] 開始提取偏好: message={message_content[:50]!r}...")
 
             # 準備中繼資料
             meta = metadata or {}
             meta["source"] = "user_message"
             meta["user_id"] = user_id
 
-            logger.debug(f"📋 [Mem0] 呼叫 add() API: user_id={user_id[:8]}..., metadata={meta}")
+            logger.debug(f"[Mem0] 呼叫 add() API: user_id={user_id[:8]}..., metadata={meta}")
 
             # 呼叫 Mem0 以自動擷取記憶
             # Mem0 會根據內容分析是否有值得儲存的信息
@@ -318,7 +319,7 @@ class MemoryService:
                 metadata=meta,
             )
 
-            logger.debug(f"📤 [Mem0] add() 返回結果: type={type(result)}, value={result!r}")
+            logger.debug(f"[Mem0] add() 返回結果: type={type(result)}, value={result!r}")
 
             # 提取 memory_id，處理多種結果格式
             memory_id = None
@@ -335,20 +336,20 @@ class MemoryService:
             
             if memory_id:
                 logger.info(
-                    f"✅ [Mem0] 記憶已提取並儲存: user_id={user_id[:8]}..., "
+                    f"[Mem0] 記憶已提取並儲存: user_id={user_id[:8]}..., "
                     f"memory_id={memory_id}, content={message_content[:50]}..."
                 )
                 return memory_id
             else:
                 logger.info(
-                    f"ℹ️ [Mem0] 訊息未包含可儲存的記憶: user_id={user_id[:8]}..., "
+                    f"[Mem0] 訊息未包含可儲存的記憶: user_id={user_id[:8]}..., "
                     f"message={message_content[:50]}..."
                 )
                 return None
 
         except Exception as e:
             logger.warning(
-                f"❌ [Mem0] 記憶提取失敗: user_id={user_id[:8]}..., "
+                f"[Mem0] 記憶提取失敗: user_id={user_id[:8]}..., "
                 f"error={str(e)[:100]}"
             )
             import traceback

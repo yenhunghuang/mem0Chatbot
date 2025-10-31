@@ -63,11 +63,11 @@ class LLMService:
 """
 
             # 新增記憶上下文（US2 T039）
-            # 🔍 詳細的記憶診斷日誌
-            logger.info(f"📝 [LLM] memories 類型: {type(memories)}, 值: {memories}")
+            # 詳細的記憶診斷日誌
+            logger.info(f"[LLM] memories 類型: {type(memories)}, 值: {memories}")
             
             if memories and len(memories) > 0:
-                logger.info(f"🧠 注入記憶: 共 {len(memories)} 個")
+                logger.info(f"[LLM] 注入記憶: 共 {len(memories)} 個")
                 
                 # 提取實際的記憶內容
                 memory_contents = []
@@ -82,9 +82,9 @@ class LLMService:
                     
                     if content:
                         memory_contents.append(content)
-                        logger.info(f"      ✅ 記憶內容有效: {content[:50]}...")
+                        logger.info(f"      [OK] 記憶內容有效: {content[:50]}...")
                     else:
-                        logger.warning(f"      ⚠️ 記憶內容為空")
+                        logger.warning(f"      [WARN] 記憶內容為空")
                 
                 # 只有當有實際記憶內容時，才添加到 system prompt
                 if memory_contents:
@@ -93,11 +93,11 @@ class LLMService:
                         memory_context += f"• {content}\n"
                     memory_context += "\n請基於上述使用者信息提供個人化的投資建議。\n"
                     system_prompt += memory_context
-                    logger.info(f"✅ [LLM] 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
+                    logger.info(f"[LLM] 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
                 else:
-                    logger.warning(f"⚠️ [LLM] 記憶結果有 {len(memories)} 個但內容全為空")
+                    logger.warning(f"[LLM] 記憶結果有 {len(memories)} 個但內容全為空")
             else:
-                logger.info(f"ℹ️ [LLM] 未找到記憶 (memories 為空或 None), memories={memories!r}")
+                logger.info(f"[LLM] 未找到記憶 (memories 為空或 None), memories={memories!r}")
 
             # 構建對話歷史上下文
             history_context = ""
@@ -206,7 +206,7 @@ class LLMService:
                     actual_memories_used = len([m for m in (memories or []) if m and m.get("content", "").strip()]) if memories else 0
                     
                     logger.info(
-                        f"✅ [LLM] 回應成功 (tokens: {len(text.split())}, "
+                        f"[LLM] 回應成功 (tokens: {len(text.split())}, "
                         f"finish_reason: {finish_reason_name}, "
                         f"memories_injected: {actual_memories_used}, "
                         f"memories_searched: {len(memories) if memories else 0})"

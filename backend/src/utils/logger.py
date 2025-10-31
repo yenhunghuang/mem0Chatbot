@@ -39,17 +39,18 @@ def get_logger(name: str) -> logging.Logger:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # 檔案 handler（帶輪換）
+    # 檔案 handler（帶輪換，使用 UTF-8 編碼）
     file_handler = RotatingFileHandler(
         log_dir / "app.log",
         maxBytes=10 * 1024 * 1024,  # 10 MB
         backupCount=5,
+        encoding="utf-8",
     )
     file_handler.setLevel(settings.log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-    # 控制台 handler
+    # 控制台 handler（Windows 相容性：移除 emoji）
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(settings.log_level)
     console_handler.setFormatter(formatter)

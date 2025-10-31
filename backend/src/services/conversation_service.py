@@ -208,7 +208,7 @@ class ConversationService:
             )
 
             # 步驟 4: 從訊息擷取記憶（非阻塞）
-            logger.info(f"📝 [對話 {conversation.id}] 開始提取記憶... user_id={user_id[:8]}..., message={message[:30]!r}...")
+            logger.info(f"[Step 4] 開始提取記憶... user_id={user_id[:8]}..., message={message[:30]!r}...")
             memory_id = None
             try:
                 memory_id = MemoryService.add_memory_from_message(
@@ -218,15 +218,15 @@ class ConversationService:
                 )
                 if memory_id:
                     logger.info(
-                        f"✅ [對話 {conversation.id}] 記憶已提取並儲存: memory_id={memory_id}"
+                        f"[Step 4] 記憶已提取並儲存: memory_id={memory_id}"
                     )
                 else:
                     logger.info(
-                        f"ℹ️ [對話 {conversation.id}] Mem0 未提取到可儲存的偏好"
+                        f"[Step 4] Mem0 未提取到可儲存的偏好"
                     )
             except Exception as e:
                 logger.warning(
-                    f"⚠️ [對話 {conversation.id}] 記憶提取失敗 (非阻塞): {str(e)}"
+                    f"[Step 4] 記憶提取失敗 (非阻塞): {str(e)[:100]}"
                 )
                 import traceback
                 logger.debug(f"   記憶提取錯誤堆棧: {traceback.format_exc()}")
@@ -234,7 +234,7 @@ class ConversationService:
             # 步驟 5: 搜索相關記憶
             memories_used = []
             try:
-                logger.info(f"🔍 [對話 {conversation.id}] 開始搜索記憶: user_id={user_id[:8]}..., query={message!r}")
+                logger.info(f"[Step 5] 開始搜索記憶: user_id={user_id[:8]}..., query={message!r}")
                 
                 memories = MemoryService.search_memories(
                     user_id,
@@ -244,17 +244,17 @@ class ConversationService:
                 memories_used = memories
                 
                 logger.info(
-                    f"✅ [對話 {conversation.id}] 搜索記憶完成: found={len(memories_used)}"
+                    f"[Step 5] 搜索記憶完成: found={len(memories_used)}"
                 )
                 if memories_used:
                     for idx, mem in enumerate(memories_used, 1):
                         content = mem.get("content", "")[:50] if isinstance(mem, dict) else str(mem)[:50]
                         logger.info(f"   [{idx}] 記憶: {content}...")
                 else:
-                    logger.info(f"   ℹ️ 未找到任何記憶")
+                    logger.info(f"   [Step 5] 未找到任何記憶")
             except Exception as e:
                 logger.warning(
-                    f"⚠️ [對話 {conversation.id}] 搜索記憶失敗 (降級): {str(e)}"
+                    f"[Step 5] 搜索記憶失敗 (降級): {str(e)[:100]}"
                 )
                 import traceback
                 logger.debug(f"   詳細錯誤: {traceback.format_exc()}")
