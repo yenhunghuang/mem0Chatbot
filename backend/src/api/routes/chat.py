@@ -22,10 +22,12 @@ from ...services.conversation_service import ConversationService
 from ..schemas.chat import (
     ChatRequest,
     ChatResponse,
+    ChatDataResponse,
     ConversationResponse,
     CreateConversationRequest,
     CreateConversationResponse,
     MessageListResponse,
+    MemoryUsedResponse,
 )
 
 logger = get_logger(__name__)
@@ -131,10 +133,28 @@ async def chat(
             message=payload.message,
         )
 
+        # 轉換記憶列表為 MemoryUsedResponse
+        memories_used = []
+        for mem in result.get("memories_used", []):
+            if isinstance(mem, dict):
+                memories_used.append(
+                    MemoryUsedResponse(
+                        id=mem.get("id", ""),
+                        content=mem.get("content", ""),
+                        metadata=mem.get("metadata"),
+                    )
+                )
+
+        # 構造回應
         return ChatResponse(
             code="SUCCESS",
             message="聊天回應已生成",
-            data=result,
+            data=ChatDataResponse(
+                conversation_id=str(result.get("conversation_id", "")),
+                user_message=result.get("user_message"),
+                assistant_message=result.get("assistant_message"),
+                memories_used=memories_used,
+            ),
         )
 
     except ValidationError as e:

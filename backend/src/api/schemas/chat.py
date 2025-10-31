@@ -87,12 +87,21 @@ class MessageResponse(BaseModel):
         }
 
 
+class ChatDataResponse(BaseModel):
+    """聊天回應資料"""
+    
+    conversation_id: str = Field(..., description="對話 ID")
+    user_message: MessageResponse = Field(..., description="使用者訊息")
+    assistant_message: MessageResponse = Field(..., description="助理訊息")
+    memories_used: List[MemoryUsedResponse] = Field(default_factory=list, description="使用的記憶")
+
+
 class ChatResponse(BaseModel):
     """聊天回應（US2 T041 - 包含 memories_used）"""
 
     code: str = Field(default="SUCCESS", description="結果代碼")
     message: Optional[str] = Field(None, description="訊息")
-    data: Optional[dict] = Field(None, description="回應資料")
+    data: Optional[ChatDataResponse] = Field(None, description="回應資料")
 
     class Config:
         json_schema_extra = {
