@@ -227,19 +227,30 @@ class ConversationService:
             # 步驟 5: 搜索相關記憶
             memories_used = []
             try:
+                logger.info(f"🔍 [對話 {conversation.id}] 開始搜索記憶: user_id={user_id[:8]}..., query={message!r}")
+                
                 memories = MemoryService.search_memories(
                     user_id,
                     message,
                     top_k=settings.memory_retrieval_top_k,
                 )
                 memories_used = memories
+                
                 logger.info(
-                    f"[對話 {conversation.id}] 搜索記憶: found={len(memories_used)}"
+                    f"✅ [對話 {conversation.id}] 搜索記憶完成: found={len(memories_used)}"
                 )
+                if memories_used:
+                    for idx, mem in enumerate(memories_used, 1):
+                        content = mem.get("content", "")[:50] if isinstance(mem, dict) else str(mem)[:50]
+                        logger.info(f"   [{idx}] 記憶: {content}...")
+                else:
+                    logger.info(f"   ℹ️ 未找到任何記憶")
             except Exception as e:
                 logger.warning(
-                    f"[對話 {conversation.id}] 搜索記憶失敗 (降級): {str(e)}"
+                    f"⚠️ [對話 {conversation.id}] 搜索記憶失敗 (降級): {str(e)}"
                 )
+                import traceback
+                logger.debug(f"   詳細錯誤: {traceback.format_exc()}")
 
             # 步驟 6: 取得對話歷史（用於上下文）
             conversation_history = StorageService.get_conversation_messages(

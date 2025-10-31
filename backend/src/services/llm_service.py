@@ -63,6 +63,9 @@ class LLMService:
 """
 
             # 新增記憶上下文（US2 T039）
+            # 🔍 詳細的記憶診斷日誌
+            logger.info(f"📝 [LLM] memories 類型: {type(memories)}, 值: {memories}")
+            
             if memories and len(memories) > 0:
                 logger.info(f"🧠 注入記憶: 共 {len(memories)} 個")
                 
@@ -72,12 +75,16 @@ class LLMService:
                     # 支援字典格式（新增）或字串格式（舊版本相容）
                     if isinstance(memory, dict):
                         content = memory.get("content", "")
+                        logger.info(f"  [{idx+1}] 字典記憶: id={memory.get('id', 'N/A')}, content={content!r}")
                     else:
                         content = str(memory)
+                        logger.info(f"  [{idx+1}] 字符記憶: {content!r}")
                     
                     if content:
                         memory_contents.append(content)
-                        logger.debug(f"  [{idx+1}] 記憶 ID: {memory.get('id', 'N/A') if isinstance(memory, dict) else 'N/A'}, Content: {content[:50]}")
+                        logger.info(f"      ✅ 記憶內容有效: {content[:50]}...")
+                    else:
+                        logger.warning(f"      ⚠️ 記憶內容為空")
                 
                 # 只有當有實際記憶內容時，才添加到 system prompt
                 if memory_contents:
@@ -86,11 +93,11 @@ class LLMService:
                         memory_context += f"• {content}\n"
                     memory_context += "\n請基於上述使用者信息提供個人化的投資建議。\n"
                     system_prompt += memory_context
-                    logger.info(f"✓ 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
+                    logger.info(f"✅ 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
                 else:
                     logger.warning(f"⚠️ 記憶結果有 {len(memories)} 個但內容全為空")
             else:
-                logger.info("ℹ️ 未找到記憶 (memories 為空或 None)")
+                logger.info(f"ℹ️ 未找到記憶 (memories 為空或 None), memories={memories!r}")
 
             # 構建對話歷史上下文
             history_context = ""
