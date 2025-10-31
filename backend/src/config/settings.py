@@ -14,8 +14,8 @@ class Settings(BaseSettings):
 
     # Google API Configuration
     google_api_key: str
-    mem0_llm_model: str = "gemini-2.5-flash"
-    mem0_embedder_model: str = "gemini-embedding-001"
+    mem0_llm_model: str = "gemini-2.0-flash"
+    mem0_embedder_model: str = "text-embedding-004"
 
     # Database Configuration
     database_url: str = "sqlite:///./data/app.db"
