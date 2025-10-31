@@ -139,23 +139,31 @@ class MemoryService:
             # 提取並轉換為字典格式
             memories = []
             
-            if not results:
+            # Mem0 返回的是 dict，結構為 {'results': [...]}
+            if isinstance(results, dict) and 'results' in results:
+                results_list = results['results']
+                logger.debug(f"從 dict 中提取到 {len(results_list)} 個記憶")
+            else:
+                # 備用：如果是 list 則直接使用
+                results_list = results if isinstance(results, list) else []
+                logger.warning(f"意外的 results 類型: {type(results)}, 轉換為 list")
+            
+            if not results_list:
                 logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found=0")
                 return memories
 
-            # 調試：記錄原始結果
-            logger.debug(f"搜索原始結果數: {len(results)}, 第一個結果類型: {type(results[0]) if results else 'None'}")
-            if results and isinstance(results[0], dict):
-                logger.debug(f"第一個結果 keys: {results[0].keys()}")
-
-            for idx, result in enumerate(results):
+            for idx, result in enumerate(results_list):
                 if isinstance(result, dict):
                     # 從 Mem0 結果提取信息
-                    # 優先順序：document > content > text > data > metadata.data
+                    # Mem0 結構: {'id': '...', 'memory': '實際內容', 'score': ..., 'metadata': {...}}
+                    # 優先順序：memory > document > content > text > data > metadata.data
                     content = None
                     
-                    # 第 1 層：直接欄位
-                    if result.get("document"):
+                    # 第 1 層：直接欄位（Mem0 使用 'memory' 欄位）
+                    if result.get("memory"):
+                        content = result.get("memory")
+                        logger.debug(f"[{idx}] 從 memory 提取: {str(content)[:50]}")
+                    elif result.get("document"):
                         content = result.get("document")
                         logger.debug(f"[{idx}] 從 document 提取: {str(content)[:50]}")
                     elif result.get("content"):
@@ -183,7 +191,7 @@ class MemoryService:
                         "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
                         "content": str(content).strip() if content else "",
                         "metadata": {
-                            "relevance": result.get("relevance", 1.0 - (idx * 0.15)),
+                            "relevance": result.get("score", result.get("relevance", 1.0 - (idx * 0.15))),
                             "created_at": result.get("created_at", ""),
                             "category": result.get("category", "general"),
                             **(result.get("metadata", {}) if isinstance(result.get("metadata"), dict) else {}),
@@ -211,9 +219,9 @@ class MemoryService:
             return memories
 
         except Exception as e:
-            logger.error(f"搜索記憶失敗: {type(e).__name__}: {str(e)[:100]}")
             import traceback
-            logger.debug(f"詳細錯誤堆棧: {traceback.format_exc()}")
+            error_trace = traceback.format_exc()
+            logger.error(f"搜索記憶失敗: {type(e).__name__}: {str(e)[:100]}\n完整堆棧:\n{error_trace}")
             # 返回空列表而不是拋出異常，以實現降級
             return []
 
