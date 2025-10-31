@@ -47,7 +47,7 @@ class MemoryService:
                     "embedder": {
                         "provider": "gemini",  # 正確的 provider 名稱
                         "config": {
-                            "model": "models/text-embedding-004",
+                            "model": f"models/{settings.mem0_embedder_model}",
                             "api_key": settings.google_api_key,
                         },
                     },
