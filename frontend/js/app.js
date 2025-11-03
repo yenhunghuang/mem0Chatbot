@@ -128,8 +128,6 @@ async function handleSendMessage(event) {
     
     // 顯示使用的記憶
     const memoriesUsed = response.data?.memories_used || [];
-    console.log('[App] 🔍 完整 response.data:', JSON.stringify(response.data, null, 2));
-    console.log('[App] 🔍 memories_used 原始數據:', JSON.stringify(memoriesUsed, null, 2));
     updateMemoriesDisplay(memoriesUsed);
     
     // 清除狀態
@@ -242,8 +240,6 @@ function updateMemoriesDisplay(memories) {
       } else if (percent >= 50) {
         relevanceClass = 'medium';
       }
-      
-      console.log(`[App] 記憶 ${index + 1} 樣式: percent=${percent}, class=${relevanceClass}`);
       
       // 顯示相關度徽章
       memoryHTML += `<span class="relevance-badge ${relevanceClass}">${percent}%</span>`;

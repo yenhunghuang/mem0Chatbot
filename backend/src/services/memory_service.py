@@ -242,12 +242,11 @@ class MemoryService:
             return []
 
     @classmethod
-    def delete_memory(cls, user_id: str, memory_id: str) -> bool:
+    def delete_memory(cls, memory_id: str) -> bool:
         """
         刪除記憶
 
         Args:
-            user_id: 使用者 ID
             memory_id: 記憶 ID
 
         Returns:
@@ -257,11 +256,11 @@ class MemoryService:
             if cls._mem0_client is None:
                 cls.initialize()
 
-            logger.info(f"開始刪除記憶: user_id={user_id}, memory_id={memory_id}")
+            logger.info(f"開始刪除記憶: memory_id={memory_id}")
             
-            cls._mem0_client.delete(memory_id=memory_id, user_id=user_id)
+            cls._mem0_client.delete(memory_id=memory_id)
             
-            logger.info(f"記憶已刪除: user_id={user_id}, memory_id={memory_id}")
+            logger.info(f"記憶已刪除: memory_id={memory_id}")
             return True
 
         except Exception as e:
