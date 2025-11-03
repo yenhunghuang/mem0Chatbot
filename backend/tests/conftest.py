@@ -3,6 +3,12 @@ Pytest 配置和共享夾具
 
 定義所有測試使用的共享夾具和配置。
 """
+import sys
+import os
+# HACK: 將 'backend' 目錄加入 sys.path
+# 這能解決 `ModuleNotFoundError: No module named 'src'` 的問題
+# 讓測試在執行時能正確找到 src 模組
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import os
 import sqlite3
