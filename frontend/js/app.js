@@ -16,6 +16,14 @@ const newChatBtn = document.getElementById('newChatBtn');
 const memoriesDiv = document.getElementById('memories');
 const sidebarDiv = document.getElementById('sidebar');
 
+// 記憶管理 DOM 元素 (T062)
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+const memoriesListDiv = document.getElementById('memoriesList');
+const memorySearchInput = document.getElementById('memorySearchInput');
+const refreshMemoriesBtn = document.getElementById('refreshMemoriesBtn');
+const deleteAllMemoriesBtn = document.getElementById('deleteAllMemoriesBtn');
+
 // 應用狀態
 let appState = {
   userId: null,
@@ -43,6 +51,9 @@ function initApp() {
   messageForm.addEventListener('submit', handleSendMessage);
   newChatBtn.addEventListener('click', handleNewChat);
   messageInput.addEventListener('keydown', handleKeyDown);
+  
+  // 綁定記憶管理事件 (T062)
+  bindMemoryEvents();
   
   // 檢查 API 健康狀態
   checkApiHealth();
@@ -298,6 +309,273 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * 記憶管理事件綁定 (T062)
+ */
+function bindMemoryEvents() {
+  // 標籤頁切換
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tabName = btn.dataset.tab;
+      switchTab(tabName);
+    });
+  });
+  
+  // 記憶列表刷新
+  if (refreshMemoriesBtn) {
+    refreshMemoriesBtn.addEventListener('click', loadMemories);
+  }
+  
+  // 清除所有記憶
+  if (deleteAllMemoriesBtn) {
+    deleteAllMemoriesBtn.addEventListener('click', handleDeleteAllMemories);
+  }
+  
+  // 搜索記憶
+  if (memorySearchInput) {
+    memorySearchInput.addEventListener('input', debounce(handleMemorySearch, 300));
+  }
+}
+
+/**
+ * 切換標籤頁
+ */
+function switchTab(tabName) {
+  // 更新按鈕狀態
+  tabBtns.forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  // 更新內容顯示
+  tabContents.forEach(content => {
+    if (content.dataset.tab === tabName) {
+      content.classList.add('active');
+      // 切換到記憶標籤時載入記憶
+      if (tabName === 'memories') {
+        loadMemories();
+      }
+    } else {
+      content.classList.remove('active');
+    }
+  });
+  
+  console.log(`[Memory] 切換到標籤: ${tabName}`);
+}
+
+/**
+ * 載入並顯示記憶列表
+ */
+async function loadMemories() {
+  if (!appState.userId) {
+    console.error('[Memory] 使用者 ID 未設置');
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    const response = await listMemories(appState.userId, { limit: 100 });
+    displayMemories(response.data || []);
+  } catch (error) {
+    console.error('[Memory] 載入記憶失敗:', error);
+    showError('無法載入記憶: ' + getErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/**
+ * 顯示記憶列表
+ */
+function displayMemories(memories) {
+  if (!memories || memories.length === 0) {
+    memoriesListDiv.innerHTML = `
+      <div class="empty-state">
+        <p>還沒有保存的記憶</p>
+        <p class="hint">在對話中分享您的投資偏好，系統會自動保存</p>
+      </div>
+    `;
+    return;
+  }
+  
+  memoriesListDiv.innerHTML = memories.map(memory => `
+    <div class="memory-card" data-memory-id="${escapeHtml(memory.id)}">
+      <div class="memory-card-header">
+        <div>
+          ${memory.category ? `<span class="memory-badge">${escapeHtml(memory.category)}</span>` : ''}
+        </div>
+        <div class="memory-actions">
+          <button class="btn-memory btn-edit" onclick="editMemory('${escapeHtml(memory.id)}', '${escapeHtml(memory.content)}')">
+            ✏️ 編輯
+          </button>
+          <button class="btn-memory btn-danger" onclick="deleteMemoryItem('${escapeHtml(memory.id)}')">
+            🗑️ 刪除
+          </button>
+        </div>
+      </div>
+      <div class="memory-content">
+        ${escapeHtml(memory.content)}
+      </div>
+      <div class="memory-meta">
+        <span>ID: ${escapeHtml(memory.id.substring(0, 8))}...</span>
+        ${memory.timestamp ? `<span>時間: ${escapeHtml(memory.timestamp.substring(0, 10))}</span>` : ''}
+        ${memory.relevance_score ? `<span>相關度: ${(memory.relevance_score * 100).toFixed(0)}%</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+  
+  console.log(`[Memory] 已顯示 ${memories.length} 個記憶`);
+}
+
+/**
+ * 刪除單一記憶
+ */
+async function deleteMemoryItem(memoryId) {
+  if (!confirm('確定要刪除此記憶嗎？')) {
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    await deleteMemory(memoryId);
+    showNotification('記憶已刪除');
+    await loadMemories();
+  } catch (error) {
+    console.error('[Memory] 刪除失敗:', error);
+    showError('無法刪除記憶: ' + getErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/**
+ * 編輯記憶
+ */
+function editMemory(memoryId, content) {
+  const newContent = prompt('編輯記憶內容:', content);
+  
+  if (newContent === null) {
+    return; // 使用者取消
+  }
+  
+  if (newContent.trim() === '') {
+    showError('記憶內容不能為空');
+    return;
+  }
+  
+  updateMemoryItem(memoryId, newContent);
+}
+
+/**
+ * 更新記憶
+ */
+async function updateMemoryItem(memoryId, content) {
+  showLoading();
+  
+  try {
+    await updateMemory(memoryId, { content: content });
+    showNotification('記憶已更新');
+    await loadMemories();
+  } catch (error) {
+    console.error('[Memory] 更新失敗:', error);
+    showError('無法更新記憶: ' + getErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/**
+ * 刪除所有記憶
+ */
+async function handleDeleteAllMemories() {
+  if (!confirm('確定要刪除所有記憶嗎？此操作無法撤銷！')) {
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    const result = await batchDeleteMemories(appState.userId);
+    showNotification(`已刪除 ${result.deleted_count} 個記憶`);
+    await loadMemories();
+  } catch (error) {
+    console.error('[Memory] 批量刪除失敗:', error);
+    showError('無法刪除記憶: ' + getErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/**
+ * 搜索記憶
+ */
+async function handleMemorySearch(e) {
+  const query = e.target.value.trim();
+  
+  if (!query) {
+    // 搜索框為空，載入所有記憶
+    await loadMemories();
+    return;
+  }
+  
+  if (!appState.userId) {
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    const response = await searchMemories(appState.userId, query, { top_k: 20 });
+    displayMemories(response.results || []);
+  } catch (error) {
+    console.error('[Memory] 搜索失敗:', error);
+    showError('搜索失敗: ' + getErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/**
+ * 防抖函數
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * 顯示通知
+ */
+function showNotification(message) {
+  const toast = document.createElement('div');
+  toast.className = 'error-toast active';
+  toast.style.backgroundColor = '#10b981';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+/**
+ * 初始化應用程式 (修改後)
+ */
+window.addEventListener('DOMContentLoaded', initApp);
 }
 
 /**

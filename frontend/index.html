@@ -21,7 +21,18 @@
 
     <!-- 主要內容區 -->
     <main class="main">
+      <!-- 標籤頁 -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="chat">
+          💬 聊天
+        </button>
+        <button class="tab-btn" data-tab="memories">
+          📝 我的記憶
+        </button>
+      </div>
+
       <!-- 聊天區 -->
+      <div class="tab-content active" id="tab-chat" data-tab="chat">
       <div class="chat-container">
         <!-- 訊息顯示區 -->
         <div class="messages" id="messages">
@@ -59,7 +70,38 @@
         </div>
       </div>
 
-      <!-- 側邊欄 - 記憶 (可選) -->
+      <!-- 記憶管理區 (T061) -->
+      <div class="tab-content" id="tab-memories" data-tab="memories">
+        <div class="memories-container">
+          <div class="memories-header">
+            <h2>我的投資偏好記憶</h2>
+            <div class="memories-actions">
+              <input
+                type="text"
+                id="memorySearchInput"
+                class="search-input"
+                placeholder="搜索記憶..."
+              >
+              <button id="refreshMemoriesBtn" class="btn-action" title="重新載入">
+                🔄 重新載入
+              </button>
+              <button id="deleteAllMemoriesBtn" class="btn-action btn-danger" title="清除所有記憶">
+                🗑️ 清除所有
+              </button>
+            </div>
+          </div>
+
+          <!-- 記憶列表 -->
+          <div class="memories-list" id="memoriesList">
+            <div class="empty-state">
+              <p>還沒有保存的記憶</p>
+              <p class="hint">在對話中分享您的投資偏好，系統會自動保存</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 側邊欄 - 使用的記憶 (可選) -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <h3>使用的記憶</h3>
@@ -88,6 +130,7 @@
   <!-- 指令碼 -->
   <script src="js/storage.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/memory.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
