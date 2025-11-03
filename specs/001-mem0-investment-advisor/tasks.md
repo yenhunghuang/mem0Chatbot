@@ -153,11 +153,11 @@
 
 **Goal**: 提供系統健康檢查端點，用於監控和除錯
 
-- [ ] T063 [P] 建立 backend/src/api/routes/health.py 實作 GET /health 基本健康檢查端點
-- [ ] T064 [P] 在 backend/src/api/routes/health.py 實作 GET /health/detailed 詳細依賴檢查（SQLite, Chroma, Gemini API, Mem0）
-- [ ] T065 [P] 在 backend/src/api/routes/health.py 實作 GET /metrics 系統效能指標端點
-- [ ] T066 在 backend/src/main.py 註冊 health.py 路由
-- [ ] T067 [P] 建立 backend/tests/api/test_health_endpoints.py 測試健康檢查端點
+- [x] T063 [P] 建立 backend/src/api/routes/health.py 實作 GET /health 基本健康檢查端點
+- [x] T064 [P] 在 backend/src/api/routes/health.py 實作 GET /health/detailed 詳細依賴檢查（SQLite, Chroma, Gemini API, Mem0）
+- [x] T065 [P] 在 backend/src/api/routes/health.py 實作 GET /metrics 系統效能指標端點
+- [x] T066 在 backend/src/main.py 註冊 health.py 路由
+- [x] T067 [P] 建立 backend/tests/api/test_health_endpoints.py 測試健康檢查端點
 
 ---
 
@@ -165,22 +165,22 @@
 
 **Purpose**: 憲法合規性與影響多個使用者故事的改進
 
-- [ ] T068 [P] 實作 backend/src/storage/database.py 的 cleanup_expired_conversations(ttl_days=30) 方法清理過期對話
-- [ ] T069 [P] 在 backend/src/services/memory_service.py 實作記憶數量上限檢查（每使用者最多 1000 條）
-- [ ] T070 實作 API 速率限制中介層（chat 端點 10 req/min, 其他端點 50 req/min）
-- [ ] T071 [P] 在所有 API 回應加入 X-Request-Id header 用於追蹤
-- [ ] T072 效能測試：驗證 LLM 回應時間 P95 < 2 秒（使用 pytest-benchmark）
-- [ ] T073 [P] 效能測試：驗證記憶檢索時間 P95 < 500 毫秒
-- [ ] T074 [P] 並發測試：驗證系統支援 50 並發對話會話
-- [ ] T075 測試覆蓋率檢查：執行 pytest --cov 驗證 ≥ 90% 覆蓋率
-- [ ] T076 [P] 程式碼品質審查：執行 ruff check . 確保無警告
-- [ ] T077 [P] 文件完整性驗證：確認所有服務和模型有 docstrings 和型別註解
-- [ ] T078 UX 一致性驗證：確認所有錯誤訊息為繁體中文且使用者友善
-- [ ] T079 [P] 繁體中文本地化檢查：驗證所有使用者面向內容（前端、API 回應、錯誤訊息）使用 zh-TW
-- [ ] T080 [P] 文件語言合規檢查：確認所有 specs/ 和 README.md 使用繁體中文
-- [ ] T081 安全審查：驗證無敏感資訊洩漏、輸入驗證完整
-- [ ] T082 [P] 建立 backend/http/api-test.http VS Code REST Client 測試檔案，涵蓋所有 API 端點
-- [ ] T083 執行 specs/001-mem0-investment-advisor/quickstart.md 中的 6 個測試場景驗證
+- [x] T068 [P] 實作 backend/src/storage/database.py 的 cleanup_expired_conversations(ttl_days=30) 方法清理過期對話
+- [x] T069 [P] 在 backend/src/services/memory_service.py 實作記憶數量上限檢查（每使用者最多 1000 條）
+- [x] T070 實作 API 速率限制中介層（chat 端點 10 req/min, 其他端點 50 req/min）
+- [x] T071 [P] 在所有 API 回應加入 X-Request-Id header 用於追蹤
+- [x] T072 效能測試：驗證 LLM 回應時間 P95 < 2 秒（使用 pytest-benchmark）
+- [x] T073 [P] 效能測試：驗證記憶檢索時間 P95 < 500 毫秒
+- [x] T074 [P] 並發測試：驗證系統支援 50 並發對話會話
+- [x] T075 測試覆蓋率檢查：執行 pytest --cov 驗證 ≥ 90% 覆蓋率
+- [x] T076 [P] 程式碼品質審查：執行 ruff check . 確保無警告
+- [x] T077 [P] 文件完整性驗證：確認所有服務和模型有 docstrings 和型別註解
+- [x] T078 UX 一致性驗證：確認所有錯誤訊息為繁體中文且使用者友善
+- [x] T079 [P] 繁體中文本地化檢查：驗證所有使用者面向內容（前端、API 回應、錯誤訊息）使用 zh-TW
+- [x] T080 [P] 文件語言合規檢查：確認所有 specs/ 和 README.md 使用繁體中文
+- [x] T081 安全審查：驗證無敏感資訊洩漏、輸入驗證完整
+- [x] T082 [P] 建立 backend/http/api-test.http VS Code REST Client 測試檔案，涵蓋所有 API 端點
+- [x] T083 執行 specs/001-mem0-investment-advisor/quickstart.md 中的 6 個測試場景驗證
 
 ---
 
