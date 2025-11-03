@@ -57,10 +57,9 @@ class LLMService:
                 cls.initialize()
 
             # 構建系統提示 - 使用簡潔中性的措辭
-            system_prompt = """你是一個專業、友善的投資顧問助理。
+            system_prompt = """你是一個專業的投資資訊助理。
 請根據使用者的需求提供資訊和建議。
-使用繁體中文回應，保持簡潔明瞭。
-"""
+使用繁體中文回應，保持簡潔明瞭。"""
 
             # 新增記憶上下文（US2 T039）
             # 詳細的記憶診斷日誌
@@ -88,10 +87,10 @@ class LLMService:
                 
                 # 只有當有實際記憶內容時，才添加到 system prompt
                 if memory_contents:
-                    memory_context = "已知的使用者信息與投資偏好：\n"
+                    memory_context = "使用者資訊：\n"
                     for content in memory_contents:
                         memory_context += f"• {content}\n"
-                    memory_context += "\n請基於上述使用者信息提供個人化的投資建議。\n"
+                    memory_context += "\n請基於上述資訊提供個人化的回應。\n"
                     system_prompt += memory_context
                     logger.info(f"[LLM] 記憶已成功注入到 prompt ({len(memory_contents)} 項)")
                 else:
@@ -113,26 +112,26 @@ class LLMService:
                 
                 system_prompt += history_context
 
-            # 構建提示
+            # 構建提示 - 使用中立、非指導性的語言
             full_prompt = f"""{system_prompt}
 
-【對話記錄】
-{history_context if history_context else "(首次對話)"}
+對話內容：
+{history_context if history_context else "(新對話)"}
 
-【當前提問】
+使用者提問：
 {user_input}
 
-【要求】
-- 請基於已知的使用者信息（如果提供）來個人化回應
-- 避免重複詢問已知的信息
-- 提供具體的投資建議而非泛泛而談
-- 如果尚缺相關信息，可詢問但要指出已知內容
+回應指南：
+- 基於提供的資訊進行回應
+- 避免重複詢問已知資訊
+- 提供具體有用的資訊
+- 如需更多背景資訊，請禮貌地說明
 
-【回應】
+回應：
 """
 
-            # 配置安全設定 - 使用寬鬆的安全級別以支援金融/投資內容
-            # BLOCK_ONLY_HIGH 只阻擋最嚴重的內容
+            # 配置安全設定 - 調整為最寬鬆設置以支援金融/投資內容
+            # BLOCK_NONE 允許所有內容
             safety_settings = [
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -148,7 +147,7 @@ class LLMService:
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
                 },
             ]
 
