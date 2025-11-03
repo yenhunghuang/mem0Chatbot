@@ -5,7 +5,7 @@
 """
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import uuid
 
 
@@ -16,8 +16,8 @@ class MemoryUsedResponse(BaseModel):
     content: str = Field(..., description="記憶內容")
     metadata: Optional[Dict[str, Any]] = Field(None, description="記憶元資料")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "mem_001",
                 "content": "使用者偏好投資科技股",
@@ -27,14 +27,19 @@ class MemoryUsedResponse(BaseModel):
                 },
             }
         }
+    )
 
 
 class ChatRequest(BaseModel):
     """聊天請求"""
 
     user_id: str = Field(..., description="使用者 UUID")
-    conversation_id: Optional[str] = Field(None, description="對話 ID UUID（無則建立新對話）")
-    message: str = Field(..., min_length=1, max_length=10000, description="使用者訊息")
+    conversation_id: Optional[str] = Field(
+        None, description="對話 ID UUID（無則建立新對話）"
+    )
+    message: str = Field(
+        ..., min_length=1, max_length=10000, description="使用者訊息"
+    )
 
     @field_validator("user_id")
     @classmethod
@@ -54,14 +59,15 @@ class ChatRequest(BaseModel):
             raise ValueError("訊息不能為空")
         return v.strip()
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
-                "conversation_id": 1,
+                "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                 "message": "我偏好投資科技股",
             }
         }
+    )
 
 
 class MessageResponse(BaseModel):
@@ -74,26 +80,29 @@ class MessageResponse(BaseModel):
     timestamp: str = Field(..., description="時間戳記 (ISO 8601)")
     token_count: int = Field(..., description="Token 數量")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 1,
-                "conversation_id": 1,
+                "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                 "role": "user",
                 "content": "我偏好投資科技股",
                 "timestamp": "2025-01-01T00:00:00",
                 "token_count": 6,
             }
         }
+    )
 
 
 class ChatDataResponse(BaseModel):
     """聊天回應資料"""
-    
+
     conversation_id: str = Field(..., description="對話 ID")
     user_message: MessageResponse = Field(..., description="使用者訊息")
     assistant_message: MessageResponse = Field(..., description="助理訊息")
-    memories_used: List[MemoryUsedResponse] = Field(default_factory=list, description="使用的記憶")
+    memories_used: List[MemoryUsedResponse] = Field(
+        default_factory=list, description="使用的記憶"
+    )
 
 
 class ChatResponse(BaseModel):
@@ -103,13 +112,13 @@ class ChatResponse(BaseModel):
     message: Optional[str] = Field(None, description="訊息")
     data: Optional[ChatDataResponse] = Field(None, description="回應資料")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "code": "SUCCESS",
                 "message": "聊天回應已生成",
                 "data": {
-                    "conversation_id": 1,
+                    "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                     "user_message": {
                         "id": 1,
                         "role": "user",
@@ -135,6 +144,7 @@ class ChatResponse(BaseModel):
                 },
             }
         }
+    )
 
 
 class ConversationResponse(BaseModel):
@@ -147,10 +157,10 @@ class ConversationResponse(BaseModel):
     status: str = Field(..., description="對話狀態")
     message_count: int = Field(..., description="訊息數量")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
                 "created_at": "2025-01-01T00:00:00",
                 "last_activity": "2025-01-01T00:05:00",
@@ -158,6 +168,7 @@ class ConversationResponse(BaseModel):
                 "message_count": 5,
             }
         }
+    )
 
 
 class CreateConversationRequest(BaseModel):
@@ -175,12 +186,13 @@ class CreateConversationRequest(BaseModel):
         except (ValueError, TypeError):
             raise ValueError("user_id 必須為有效的 UUID 格式")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
             }
         }
+    )
 
 
 class CreateConversationResponse(BaseModel):
@@ -189,12 +201,12 @@ class CreateConversationResponse(BaseModel):
     code: str = Field(default="SUCCESS", description="結果代碼")
     data: ConversationResponse = Field(..., description="新建立的對話")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "code": "SUCCESS",
                 "data": {
-                    "id": 1,
+                    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                     "user_id": "550e8400-e29b-41d4-a716-446655440000",
                     "created_at": "2025-01-01T00:00:00",
                     "last_activity": "2025-01-01T00:00:00",
@@ -203,6 +215,7 @@ class CreateConversationResponse(BaseModel):
                 },
             }
         }
+    )
 
 
 class MessageListResponse(BaseModel):
@@ -212,14 +225,14 @@ class MessageListResponse(BaseModel):
     data: List[MessageResponse] = Field(..., description="訊息列表")
     meta: dict = Field(..., description="中繼資料")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "code": "SUCCESS",
                 "data": [
                     {
                         "id": 1,
-                        "conversation_id": 1,
+                        "conversation_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
                         "role": "user",
                         "content": "訊息",
                         "timestamp": "2025-01-01T00:00:00",
@@ -232,3 +245,4 @@ class MessageListResponse(BaseModel):
                 },
             }
         }
+    )
