@@ -78,20 +78,28 @@
 通過: 126 ✅
 失敗: 0 ❌
 跳過: 0 ⏭️
-執行時間: 0.53s
+執行時間: 0.56s
 ```
 
 ### 測試覆蓋率 (按模組)
 ```
 src/api/schemas/memory.py ........... 100% ✅
-src/api/routes/memory.py ............ 20%  (路由邏輯需要端到端測試)
 src/services/memory_service.py ...... 64%  ✅
+src/api/routes/memory.py ............ 20%  (路由邏輯需要端到端測試)
 ```
 
 ### 新增測試摘要
 - **18 個 API 端點單元測試** (test_memory_endpoints.py)
 - **8 個整合測試** (test_memory_crud.py)  
 - **3 個服務方法測試** (test_memory_endpoints.py 中的 TestMemoryServiceMethods)
+
+### 前端測試 (手動測試)
+- ✅ 標籤頁切換功能
+- ✅ 記憶列表載入和顯示
+- ✅ 記憶編輯功能
+- ✅ 單一/批量刪除功能
+- ✅ 搜索功能
+- ✅ 錯誤處理和通知顯示
 
 ---
 
@@ -140,7 +148,54 @@ src/services/memory_service.py ...... 64%  ✅
 | POST | `/api/v1/memories/batch-delete` | 批量刪除 | 200/422/500 |
 | POST | `/api/v1/memories/search` | 語義搜索 | 200/422/500 |
 
-### 請求/回應範例
+## 功能演示
+
+### 前端使用者流程 (T062)
+
+#### 1. 聊天介面
+```
+使用者在聊天視窗輸入投資問題
+↓
+系統自動保存相關記憶
+↓
+使用者可在聊天時看到相關記憶
+```
+
+#### 2. 記憶管理介面
+```
+點擊「📝 我的記憶」標籤
+↓
+顯示所有已保存的投資偏好記憶
+↓
+每個記憶卡片顯示：
+  - 內容
+  - 類別 (investment_type, risk_level 等)
+  - 時間戳
+  - 相關度評分
+  - 編輯/刪除按鈕
+```
+
+#### 3. 記憶操作
+```
+搜索記憶：在搜索框輸入關鍵字
+刷新記憶：點擊「🔄 重新載入」
+編輯記憶：點擊「✏️ 編輯」按鈕
+刪除記憶：點擊「🗑️ 刪除」按鈕
+清除全部：點擊「🗑️ 清除所有」按鈕
+```
+
+### 範例記憶卡片
+
+```
+┌─────────────────────────────────┐
+│ [投資類型] 時間: 2025-10-30    ✏️ 🗑️ │
+├─────────────────────────────────┤
+│ 我偏好投資科技股和成長型基金      │
+│ 風險承受度中等，尋求長期增長      │
+├─────────────────────────────────┤
+│ ID: mem-12ab... 相關度: 95%     │
+└─────────────────────────────────┘
+```
 
 **取得記憶列表**
 ```bash
@@ -200,12 +255,36 @@ Response (200):
    - 依賴 Mem0 的 metadata 結構
    - 需要確保所有記憶都有正確的 category 標籤
 
-### 前端實現 (T060-T062, 未實作)
-- `memory.js` API 客戶端 (可選)
-- 前端 UI 組件顯示記憶列表 (可選)
-- 前端 CRUD 交互功能 (可選)
+### 前端實現 (T060-T062) ✅ 完成
 
-*注：前端任務屬於增強功能，後端 API 已完全可用*
+**T060: frontend/js/memory.js - 記憶 API 客戶端**
+- ✅ `listMemories()` - 取得記憶列表 (支援分頁、類別過濾)
+- ✅ `deleteMemory()` - 刪除單一記憶
+- ✅ `updateMemory()` - 更新記憶內容和類別
+- ✅ `batchDeleteMemories()` - 批量刪除記憶
+- ✅ `searchMemories()` - 語義搜索記憶
+
+**T061: frontend/index.html - 記憶管理 UI**
+- ✅ 標籤頁導航 (聊天/我的記憶)
+- ✅ 記憶管理容器 (搜索、刷新、清除按鈕)
+- ✅ 記憶列表卡片 (含類別、時間戳、相關度)
+- ✅ 記憶操作按鈕 (編輯、刪除)
+- ✅ 空狀態提示信息
+
+**T062: frontend/js/app.js - 記憶功能整合**
+- ✅ 標籤頁切換事件處理
+- ✅ 從 API 載入並顯示記憶列表
+- ✅ 編輯記憶 (使用 prompt 對話框)
+- ✅ 刪除單一或批量記憶
+- ✅ 搜索記憶 (含防抖)
+- ✅ 成功/錯誤通知顯示
+
+**CSS 樣式更新**
+- ✅ 標籤頁導航樣式
+- ✅ 記憶卡片設計 (含中繼資料)
+- ✅ 搜索和操作按鈕樣式
+- ✅ 空狀態訊息樣式
+- ✅ 響應式設計相容性
 
 ---
 
@@ -225,13 +304,15 @@ Response (200):
 
 ## 提交資訊
 
-**Commit**: `7a1549b`  
-**Message**: `feat(us3): implement phase 5 - memory review & update (CRUD operations)`
+**Commit 1**: `7a1549b` - feat(us3): implement phase 5 - memory review & update (CRUD operations)  
+**Commit 2**: `d290b9d` - docs: add Phase 5 completion report  
+**Commit 3**: `8e60512` - fix(llm): resolve Google Gemini SAFETY filter issues  
+**Commit 4**: `a33a99b` - feat(us3-frontend): implement memory management UI (T060-T062)
 
-**變更詳情**:
-- 新增 4 個檔案
-- 6 個檔案修改
-- 1136 行程式碼新增
+**總變更詳情**:
+- 新增 7 個檔案 (4 後端 + 3 前端)
+- 修改 4 個檔案 (settings, main, css, report)
+- 1536 行程式碼新增 (後端 1136 + 前端 400+)
 
 ---
 
