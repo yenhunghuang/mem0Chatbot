@@ -308,13 +308,22 @@ async def search_memories(
         
         # 轉換為 response 格式
         memory_responses = []
-        for result in results:
-            memory_responses.append(MemoryResponse(
-                id=result.get("id", ""),
-                content=result.get("content", ""),
-                category=result.get("metadata", {}).get("category"),
-                relevance_score=result.get("metadata", {}).get("relevance"),
-            ))
+        for idx, result in enumerate(results):
+            if result is None:  # 過濾掉 None 值
+                logger.warning(f"跳過 None 結果 (idx={idx})")
+                continue
+            
+            try:
+                memory_response = MemoryResponse(
+                    id=result.get("id", ""),
+                    content=result.get("content", ""),
+                    category=result.get("metadata", {}).get("category"),
+                    relevance_score=result.get("relevance_score"),
+                )
+                memory_responses.append(memory_response)
+            except Exception as e:
+                logger.error(f"構造記憶響應失敗 (idx={idx}): {str(e)}, result={result}")
+                continue
         
         return SemanticSearchResponse(
             results=memory_responses,
