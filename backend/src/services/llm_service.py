@@ -135,15 +135,15 @@ class LLMService:
             safety_settings = [
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                    "threshold": genai.types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    "threshold": genai.types.HarmBlockThreshold.BLOCK_NONE,
                 },
                 {
                     "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
