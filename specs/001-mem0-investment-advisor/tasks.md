@@ -122,25 +122,25 @@
 
 ### Tests for User Story 3 (REQUIRED per Constitution) ⚠️
 
-- [ ] T044 [P] [US3] 建立 backend/tests/api/test_memory_endpoints.py，測試 GET /memories, GET /memories/{id}, PUT /memories/{id}, DELETE /memories/{id} 端點
-- [ ] T045 [P] [US3] 在 backend/tests/unit/test_memory_service.py 新增 update_memory() 和 delete_memory() 測試案例
-- [ ] T046 [P] [US3] 建立 backend/tests/integration/test_memory_crud.py，測試完整的記憶 CRUD 流程
+- [x] T044 [P] [US3] 建立 backend/tests/api/test_memory_endpoints.py，測試 GET /memories, GET /memories/{id}, PUT /memories/{id}, DELETE /memories/{id} 端點
+- [x] T045 [P] [US3] 在 backend/tests/unit/test_memory_service.py 新增 update_memory() 和 delete_memory() 測試案例
+- [x] T046 [P] [US3] 建立 backend/tests/integration/test_memory_crud.py，測試完整的記憶 CRUD 流程
 
 ### Implementation for User Story 3
 
-- [ ] T047 [P] [US3] 建立 backend/src/api/schemas/memory.py 定義 MemoryResponse, MemoryListResponse, MemoryUpdateRequest, BatchDeleteRequest Pydantic 模型
-- [ ] T048 [US3] 實作 backend/src/services/memory_service.py 的 get_memories(user_id, limit, category) 方法
-- [ ] T049 [US3] 實作 backend/src/services/memory_service.py 的 get_memory_by_id(memory_id) 方法
-- [ ] T050 [US3] 實作 backend/src/services/memory_service.py 的 update_memory(memory_id, content, category) 方法
-- [ ] T051 [US3] 實作 backend/src/services/memory_service.py 的 delete_memory(memory_id) 和 batch_delete_memories(user_id, category) 方法
-- [ ] T052 [US3] 建立 backend/src/api/routes/memory.py 實作 GET /memories 端點
-- [ ] T053 [P] [US3] 在 backend/src/api/routes/memory.py 實作 GET /memories/{memory_id} 端點
-- [ ] T054 [P] [US3] 在 backend/src/api/routes/memory.py 實作 PUT /memories/{memory_id} 端點
-- [ ] T055 [P] [US3] 在 backend/src/api/routes/memory.py 實作 DELETE /memories/{memory_id} 端點
-- [ ] T056 [P] [US3] 在 backend/src/api/routes/memory.py 實作 POST /memories/batch-delete 端點
-- [ ] T057 [P] [US3] 在 backend/src/api/routes/memory.py 實作 POST /memories/search 端點（語義搜索）
-- [ ] T058 [US3] 在 memory.py 所有端點加入錯誤處理（404 記憶不存在, 400 驗證錯誤）
-- [ ] T059 [US3] 在 backend/src/main.py 註冊 memory.py 路由
+- [x] T047 [P] [US3] 建立 backend/src/api/schemas/memory.py 定義 MemoryResponse, MemoryListResponse, MemoryUpdateRequest, BatchDeleteRequest Pydantic 模型
+- [x] T048 [US3] 實作 backend/src/services/memory_service.py 的 get_memories(user_id, limit, category) 方法
+- [x] T049 [US3] 實作 backend/src/services/memory_service.py 的 get_memory_by_id(memory_id) 方法
+- [x] T050 [US3] 實作 backend/src/services/memory_service.py 的 update_memory(memory_id, content, category) 方法
+- [x] T051 [US3] 實作 backend/src/services/memory_service.py 的 delete_memory(memory_id) 和 batch_delete_memories(user_id, category) 方法
+- [x] T052 [US3] 建立 backend/src/api/routes/memory.py 實作 GET /memories 端點
+- [x] T053 [P] [US3] 在 backend/src/api/routes/memory.py 實作 GET /memories/{memory_id} 端點
+- [x] T054 [P] [US3] 在 backend/src/api/routes/memory.py 實作 PUT /memories/{memory_id} 端點
+- [x] T055 [P] [US3] 在 backend/src/api/routes/memory.py 實作 DELETE /memories/{memory_id} 端點
+- [x] T056 [P] [US3] 在 backend/src/api/routes/memory.py 實作 POST /memories/batch-delete 端點
+- [x] T057 [P] [US3] 在 backend/src/api/routes/memory.py 實作 POST /memories/search 端點（語義搜索）
+- [x] T058 [US3] 在 memory.py 所有端點加入錯誤處理（404 記憶不存在, 400 驗證錯誤）
+- [x] T059 [US3] 在 backend/src/main.py 註冊 memory.py 路由
 - [ ] T060 [P] [US3] 建立 frontend/js/memory.js 實作記憶管理 API 客戶端（listMemories, deleteMemory, updateMemory）
 - [ ] T061 [US3] 修改 frontend/index.html 新增「查看我的偏好」按鈕和記憶顯示區域
 - [ ] T062 [US3] 在 frontend/js/app.js 整合 memory.js，實作顯示記憶列表和刪除功能
