@@ -108,8 +108,60 @@ body {
 /* 主要區域 */
 .main {
   display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
+}
+
+/* 標籤頁 (T061) */
+.tabs {
+  display: flex;
+  gap: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 var(--spacing-lg);
+  background-color: var(--bg-color);
+}
+
+.tab-btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-color);
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+/* 標籤頁內容 */
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab-content.active {
+  display: flex;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .chat-container {
@@ -147,13 +199,47 @@ body {
 }
 
 .memory-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
   background-color: var(--primary-light);
   border-left: 3px solid var(--primary-color);
   border-radius: var(--border-radius);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--gray-700);
+  position: relative;
+}
+
+.memory-item .relevance-badge {
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.memory-item .relevance-badge.high {
+  background-color: var(--secondary-color);
+}
+
+.memory-item .relevance-badge.medium {
+  background-color: var(--warning-color);
+}
+
+.memory-item .relevance-badge.low {
+  background-color: var(--gray-400);
+}
+
+.memory-item .memory-content {
+  display: block;
+  padding-right: 60px; /* 為百分比徽章留空間 */
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .empty {
@@ -377,58 +463,6 @@ body {
   }
 }
 
-/* 標籤頁 (T061) */
-.tabs {
-  display: flex;
-  gap: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: var(--spacing-lg);
-  background-color: var(--bg-secondary);
-}
-
-.tab-btn {
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  transition: all 0.3s ease;
-}
-
-.tab-btn:hover {
-  color: var(--text-color);
-}
-
-.tab-btn.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-}
-
-/* 標籤頁內容 */
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 /* 記憶管理容器 (T061) */
 .memories-container {
   display: flex;
@@ -436,6 +470,7 @@ body {
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
   height: 100%;
+  overflow: hidden;
 }
 
 .memories-header {

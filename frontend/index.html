@@ -21,7 +21,7 @@
 
     <!-- 主要內容區 -->
     <main class="main">
-      <!-- 標籤頁 -->
+      <!-- 標籤頁導航 -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="chat">
           💬 聊天
@@ -31,43 +31,54 @@
         </button>
       </div>
 
-      <!-- 聊天區 -->
+      <!-- 聊天標籤內容 -->
       <div class="tab-content active" id="tab-chat" data-tab="chat">
-      <div class="chat-container">
-        <!-- 訊息顯示區 -->
-        <div class="messages" id="messages">
-          <div class="message system">
-            <p>歡迎使用投資顧問助理！您可以詢問任何投資相關問題，我會根據您的偏好提供個人化建議。</p>
-          </div>
-          <div class="message system">
-            <p>💡 提示：告訴我您的投資偏好、風險承受度或具體的投資問題，系統將自動記住您的信息。</p>
-          </div>
-        </div>
-
-        <!-- 輸入區 -->
-        <div class="input-area">
-          <form id="messageForm" class="message-form">
-            <div class="input-wrapper">
-              <textarea
-                id="messageInput"
-                class="message-input"
-                placeholder="輸入您的訊息或投資問題..."
-                rows="3"
-              ></textarea>
-              <button
-                type="submit"
-                class="btn-send"
-                id="sendBtn"
-                title="發送訊息 (Ctrl+Enter)"
-              >
-                發送
-              </button>
+        <div class="chat-container">
+          <!-- 訊息顯示區 -->
+          <div class="messages" id="messages">
+            <div class="message system">
+              <p>歡迎使用投資顧問助理！您可以詢問任何投資相關問題，我會根據您的偏好提供個人化建議。</p>
             </div>
-          </form>
+            <div class="message system">
+              <p>💡 提示：告訴我您的投資偏好、風險承受度或具體的投資問題，系統將自動記住您的信息。</p>
+            </div>
+          </div>
 
-          <!-- 狀態提示 -->
-          <div class="status" id="status"></div>
+          <!-- 輸入區 -->
+          <div class="input-area">
+            <form id="messageForm" class="message-form">
+              <div class="input-wrapper">
+                <textarea
+                  id="messageInput"
+                  class="message-input"
+                  placeholder="輸入您的訊息或投資問題..."
+                  rows="3"
+                ></textarea>
+                <button
+                  type="submit"
+                  class="btn-send"
+                  id="sendBtn"
+                  title="發送訊息 (Ctrl+Enter)"
+                >
+                  發送
+                </button>
+              </div>
+            </form>
+
+            <!-- 狀態提示 -->
+            <div class="status" id="status"></div>
+          </div>
         </div>
+
+        <!-- 側邊欄 - 使用的記憶 -->
+        <aside class="sidebar" id="sidebar">
+          <div class="sidebar-header">
+            <h3>使用的記憶</h3>
+          </div>
+          <div class="memories" id="memories">
+            <p class="empty">目前沒有使用的記憶</p>
+          </div>
+        </aside>
       </div>
 
       <!-- 記憶管理區 (T061) -->
@@ -100,16 +111,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 側邊欄 - 使用的記憶 (可選) -->
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <h3>使用的記憶</h3>
-        </div>
-        <div class="memories" id="memories">
-          <p class="empty">目前沒有使用的記憶</p>
-        </div>
-      </aside>
     </main>
 
     <!-- 頁腳 -->

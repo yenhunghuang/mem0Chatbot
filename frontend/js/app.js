@@ -128,6 +128,8 @@ async function handleSendMessage(event) {
     
     // 顯示使用的記憶
     const memoriesUsed = response.data?.memories_used || [];
+    console.log('[App] 🔍 完整 response.data:', JSON.stringify(response.data, null, 2));
+    console.log('[App] 🔍 memories_used 原始數據:', JSON.stringify(memoriesUsed, null, 2));
     updateMemoriesDisplay(memoriesUsed);
     
     // 清除狀態
@@ -208,34 +210,50 @@ function updateMemoriesDisplay(memories) {
   sidebarDiv.classList.add('active');
   
   memoriesDiv.innerHTML = memories
-    .map((memory) => {
-      // 支援字典格式和字串格式
-      let content = memory;
-      let relevance = null;
+    .map((memory, index) => {
+      // 📌 從統一格式提取數據
+      let content = '';
+      let relevance = 0;
       
       if (typeof memory === 'object' && memory !== null) {
-        content = memory.content || memory.text || '';
-        relevance = memory.metadata?.relevance;
+        // 提取內容（Mem0 標準格式使用 'content' 欄位）
+        content = memory.content || memory.memory || '';
+        
+        // 📌 只從頂層讀取 relevance_score（單一數據源）
+        relevance = memory.relevance_score || 0;
+        
+        console.log(`[App] 記憶 ${index + 1}: "${content.substring(0, 30)}...", 相關度=${relevance}`);
+      } else {
+        // 備用：字串格式
+        content = String(memory);
+        relevance = 0;
+        console.log(`[App] 記憶 ${index + 1}: 字串格式 "${content.substring(0, 30)}..."`);
       }
       
       // 建立記憶項目
       let memoryHTML = `<div class="memory-item">`;
       
-      // 顯示相關度徽章（如果有）
-      if (relevance !== null && typeof relevance === 'number') {
-        const percent = Math.round(relevance * 100);
-        const relevanceClass = percent >= 80 ? 'high' : percent >= 50 ? 'medium' : 'low';
-        memoryHTML += `<span class="relevance-badge ${relevanceClass}">${percent}%</span>`;
+      // 計算百分比和顏色等級
+      const percent = Math.round(relevance * 100);
+      let relevanceClass = 'low';
+      
+      if (percent >= 80) {
+        relevanceClass = 'high';
+      } else if (percent >= 50) {
+        relevanceClass = 'medium';
       }
       
+      console.log(`[App] 記憶 ${index + 1} 樣式: percent=${percent}, class=${relevanceClass}`);
+      
+      // 顯示相關度徽章
+      memoryHTML += `<span class="relevance-badge ${relevanceClass}">${percent}%</span>`;
       memoryHTML += `<span class="memory-content">${escapeHtml(content)}</span></div>`;
       
       return memoryHTML;
     })
     .join('');
   
-  // 在控制台顯示記憶信息（用於調試）
-  console.log('[App] 使用的記憶:', memories);
+  console.log(`[App] 顯示 ${memories.length} 條使用的記憶`);
 }
 
 /**
@@ -297,6 +315,38 @@ function disableInput() {
 function enableInput() {
   messageInput.disabled = false;
   sendBtn.disabled = false;
+}
+
+/**
+ * 顯示載入指示器
+ */
+function showLoading() {
+  loadingDiv.classList.add('active');
+}
+
+/**
+ * 隱藏載入指示器
+ */
+function hideLoading() {
+  loadingDiv.classList.remove('active');
+}
+
+/**
+ * 從錯誤物件取得錯誤訊息
+ * 
+ * @param {Error} error - 錯誤物件
+ * @returns {string} 錯誤訊息
+ */
+function getErrorMessage(error) {
+  if (typeof error === 'string') {
+    return error;
+  }
+  
+  if (error.message) {
+    return error.message;
+  }
+  
+  return '發生未知錯誤';
 }
 
 /**
@@ -562,8 +612,19 @@ function debounce(func, wait) {
  */
 function showNotification(message) {
   const toast = document.createElement('div');
-  toast.className = 'error-toast active';
-  toast.style.backgroundColor = '#10b981';
+  toast.className = 'success-toast active';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: var(--spacing-lg, 24px);
+    right: var(--spacing-lg, 24px);
+    background-color: #10b981;
+    color: white;
+    padding: var(--spacing-md, 16px) var(--spacing-lg, 24px);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+    z-index: 999;
+    animation: slideInRight 0.3s ease-in-out;
+  `;
   toast.textContent = message;
   document.body.appendChild(toast);
   
@@ -576,7 +637,6 @@ function showNotification(message) {
  * 初始化應用程式 (修改後)
  */
 window.addEventListener('DOMContentLoaded', initApp);
-}
 
 /**
  * 自動調整文字區域高度
