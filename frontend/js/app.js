@@ -526,7 +526,10 @@ async function updateMemoryItem(memoryId, content) {
   showLoading();
   
   try {
-    await updateMemory(memoryId, { content: content });
+    await updateMemory(memoryId, { 
+      user_id: appState.userId,
+      content: content 
+    });
     showNotification('記憶已更新');
     await loadMemories();
   } catch (error) {

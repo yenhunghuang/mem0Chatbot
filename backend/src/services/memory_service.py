@@ -554,6 +554,7 @@ class MemoryService:
     @classmethod
     def update_memory(
         cls,
+        user_id: str,
         memory_id: str,
         content: str,
         category: Optional[str] = None,
@@ -562,6 +563,7 @@ class MemoryService:
         更新記憶內容（US3 T050）
 
         Args:
+            user_id: 使用者 ID
             memory_id: 記憶 ID
             content: 新的記憶內容
             category: 記憶類別（選用）
@@ -578,7 +580,7 @@ class MemoryService:
                 cls.initialize()
 
             # Mem0 不支持直接 update，採用刪除舊記憶再新增的方式
-            logger.info(f"[開始更新記憶] memory_id={memory_id}, content={content[:50]}...")
+            logger.info(f"[開始更新記憶] user_id={user_id}, memory_id={memory_id}, content={content[:50]}...")
             
             # 1. 先刪除舊記憶
             try:
@@ -587,13 +589,31 @@ class MemoryService:
             except Exception as e:
                 logger.warning(f"[刪除舊記憶失敗] memory_id={memory_id}, error={str(e)}")
             
-            # 2. 新增新記憶
+            # 2. 新增新記憶（需要 user_id）
             meta = {}
             if category:
                 meta["category"] = category
             
-            new_memory_id = cls._mem0_client.add(content, metadata=meta)
-            logger.info(f"[新增記憶成功] old_id={memory_id}, new_id={new_memory_id}")
+            result = cls._mem0_client.add(
+                content,
+                user_id=user_id,
+                metadata=meta
+            )
+            logger.info(f"[DEBUG] add() 返回結果類型: {type(result)}, 值: {result}")
+            
+            # 提取新的記憶 ID
+            new_memory_id = None
+            if isinstance(result, dict) and "results" in result:
+                results = result.get("results", [])
+                if results and len(results) > 0:
+                    new_memory_id = results[0].get("id")
+            elif isinstance(result, str):
+                new_memory_id = result
+            
+            if not new_memory_id:
+                raise MemoryError(f"無法從 add() 結果中提取記憶 ID: {result}")
+            
+            logger.info(f"[新增記憶成功] user_id={user_id}, old_id={memory_id}, new_id={new_memory_id}")
             
             return {
                 "id": new_memory_id,

@@ -64,11 +64,13 @@ class MemoryUpdateRequest(BaseModel):
 
     model_config = ConfigDict(json_schema_extra={
         "example": {
+            "user_id": "user-123",
             "content": "更新後的科技股投資偏好",
             "category": "investment_type",
         }
     })
 
+    user_id: str = Field(..., description="使用者 ID")
     content: str = Field(..., description="記憶內容", min_length=1, max_length=10000)
     category: Optional[str] = Field(None, description="記憶類別")
 

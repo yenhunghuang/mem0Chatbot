@@ -147,12 +147,22 @@ async def update_memory(
         HTTPException: 404 記憶不存在, 400 驗證錯誤, 500 伺服器錯誤
     """
     try:
+        logger.info(f"[DEBUG] 更新記憶請求: memory_id={memory_id}")
+        logger.info(f"[DEBUG] request.user_id={getattr(request, 'user_id', None)}")
+        logger.info(f"[DEBUG] request.content={getattr(request, 'content', None)[:50] if getattr(request, 'content', None) else None}...")
+        
         if not request.content or not request.content.strip():
+            logger.error("[DEBUG] 驗證失敗: 記憶內容為空")
             raise HTTPException(status_code=422, detail="記憶內容不能為空")
+        
+        if not request.user_id or not request.user_id.strip():
+            logger.error("[DEBUG] 驗證失敗: 使用者 ID 為空")
+            raise HTTPException(status_code=422, detail="使用者 ID 不能為空")
 
-        logger.info(f"更新記憶: memory_id={memory_id}")
+        logger.info(f"更新記憶: user_id={request.user_id}, memory_id={memory_id}")
         
         updated_memory = MemoryService.update_memory(
+            user_id=request.user_id,
             memory_id=memory_id,
             content=request.content,
             category=request.category,

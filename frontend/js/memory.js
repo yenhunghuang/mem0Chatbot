@@ -99,6 +99,7 @@ async function updateMemory(memoryId, updateData) {
   
   try {
     const payload = {
+      user_id: updateData.user_id,
       content: updateData.content,
     };
     
