@@ -10,6 +10,10 @@ import tempfile
 from typing import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# 在導入 settings 前設置測試環境變數
+if not os.getenv("GOOGLE_API_KEY"):
+    os.environ["GOOGLE_API_KEY"] = "test-key"
+
 import pytest
 from fastapi.testclient import TestClient
 

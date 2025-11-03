@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime
 import uuid
 
-from backend.src.utils.exceptions import MemoryError, LLMError, DatabaseError
+from src.utils.exceptions import MemoryError, LLMError, DatabaseError
 
 
 class TestChatFlowIntegration:
@@ -18,9 +18,9 @@ class TestChatFlowIntegration:
     @pytest.fixture
     def setup_services(self):
         """設定所有必要的模擬服務"""
-        with patch("backend.src.services.memory_service.MemoryService") as mock_memory, \
-             patch("backend.src.services.llm_service.LLMService") as mock_llm, \
-             patch("backend.src.storage.database.DatabaseManager") as mock_db:
+        with patch("src.services.memory_service.MemoryService") as mock_memory, \
+             patch("src.services.llm_service.LLMService") as mock_llm, \
+             patch("src.storage.database.DatabaseManager") as mock_db:
 
             # 設定模擬返回值
             mock_memory.add_memory.return_value = "mem_001"
@@ -181,9 +181,9 @@ class TestChatFlowErrorHandling:
     @pytest.fixture
     def setup_services_with_errors(self):
         """設定會產生錯誤的模擬服務"""
-        with patch("backend.src.services.memory_service.MemoryService") as mock_memory, \
-             patch("backend.src.services.llm_service.LLMService") as mock_llm, \
-             patch("backend.src.storage.database.DatabaseManager") as mock_db:
+        with patch("src.services.memory_service.MemoryService") as mock_memory, \
+             patch("src.services.llm_service.LLMService") as mock_llm, \
+             patch("src.storage.database.DatabaseManager") as mock_db:
 
             yield {
                 "memory": mock_memory,
@@ -246,7 +246,7 @@ class TestChatFlowConversationHistory:
     @pytest.fixture
     def setup_services(self):
         """設定服務"""
-        with patch("backend.src.services.llm_service.LLMService") as mock_llm:
+        with patch("src.services.llm_service.LLMService") as mock_llm:
             yield {"llm": mock_llm}
 
     def test_conversation_history_passed_to_llm(self, setup_services):

@@ -16,24 +16,6 @@ from fastapi.testclient import TestClient
 class TestChatEndpointRequestValidation:
     """測試聊天端點的請求驗證"""
 
-    @pytest.fixture
-    def client(self):
-        """建立 FastAPI 測試客戶端"""
-        with patch("backend.src.main.DatabaseManager"), \
-             patch("backend.src.main.EmbeddingService"), \
-             patch("backend.src.main.LLMService"), \
-             patch("backend.src.main.MemoryService"):
-
-            # 從 main.py 匯入應該在 mock 設定好後進行
-            from backend.src.main import app
-            return TestClient(app)
-
-    def test_chat_endpoint_exists(self, client):
-        """測試 /api/v1/chat 端點存在"""
-        # 注意: 由於尚未實作路由，此測試驗證端點結構
-        # 實際測試需要路由被實作
-        pass
-
     def test_chat_request_with_valid_payload(self):
         """測試有效的聊天請求"""
         payload = {
@@ -277,9 +259,9 @@ class TestChatEndpointIntegrationWithServices:
     @pytest.fixture
     def mock_services(self):
         """模擬後端服務"""
-        with patch("backend.src.services.conversation_service.ConversationService") as mock_conv, \
-             patch("backend.src.services.memory_service.MemoryService") as mock_memory, \
-             patch("backend.src.services.llm_service.LLMService") as mock_llm:
+        with patch("src.services.conversation_service.ConversationService") as mock_conv, \
+             patch("src.services.memory_service.MemoryService") as mock_memory, \
+             patch("src.services.llm_service.LLMService") as mock_llm:
 
             mock_conv.process_message.return_value = {
                 "message_id": 101,

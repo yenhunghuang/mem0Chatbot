@@ -8,8 +8,8 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from typing import List
 
-from backend.src.services.memory_service import MemoryService
-from backend.src.utils.exceptions import MemoryError
+from src.services.memory_service import MemoryService
+from src.utils.exceptions import MemoryError
 
 
 class TestMemoryServiceAddMemory:
@@ -18,7 +18,7 @@ class TestMemoryServiceAddMemory:
     @pytest.fixture
     def mock_mem0(self):
         """模擬 Mem0 客戶端"""
-        with patch("backend.src.services.memory_service.Memory") as mock:
+        with patch("src.services.memory_service.Memory") as mock:
             yield mock
 
     def test_add_memory_success(self, mock_mem0):
@@ -98,7 +98,7 @@ class TestMemoryServiceSearchMemories:
     @pytest.fixture
     def mock_mem0(self):
         """模擬 Mem0 客戶端"""
-        with patch("backend.src.services.memory_service.Memory") as mock:
+        with patch("src.services.memory_service.Memory") as mock:
             yield mock
 
     def test_search_memories_success(self, mock_mem0):
@@ -120,7 +120,7 @@ class TestMemoryServiceSearchMemories:
 
         # 斷言
         assert len(results) == 2
-        assert "科技股" in results[0]
+        assert "科技股" in results[0]['content']
         mock_client.search.assert_called_once_with(
             query=query,
             user_id=user_id,
@@ -181,7 +181,7 @@ class TestMemoryServiceDeleteMemory:
     @pytest.fixture
     def mock_mem0(self):
         """模擬 Mem0 客戶端"""
-        with patch("backend.src.services.memory_service.Memory") as mock:
+        with patch("src.services.memory_service.Memory") as mock:
             yield mock
 
     def test_delete_memory_success(self, mock_mem0):
@@ -223,7 +223,7 @@ class TestMemoryServiceInitialization:
 
     def test_initialize_success(self):
         """測試成功初始化"""
-        with patch("backend.src.services.memory_service.Memory") as mock:
+        with patch("src.services.memory_service.Memory") as mock:
             mock.from_config.return_value = MagicMock()
 
             # 應不拋出異常
@@ -232,7 +232,7 @@ class TestMemoryServiceInitialization:
 
     def test_initialize_failure(self):
         """測試初始化失敗"""
-        with patch("backend.src.services.memory_service.Memory") as mock:
+        with patch("src.services.memory_service.Memory") as mock:
             mock.from_config.side_effect = Exception("初始化失敗")
 
             with pytest.raises(MemoryError):
@@ -240,6 +240,6 @@ class TestMemoryServiceInitialization:
 
     def test_initialize_mem0_not_installed(self):
         """測試 Mem0 未安裝時"""
-        with patch("backend.src.services.memory_service.Memory", None):
+        with patch("src.services.memory_service.Memory", None):
             with pytest.raises(MemoryError, match="Mem0 庫未安裝"):
                 MemoryService.initialize()

@@ -9,7 +9,7 @@ import sqlite3
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
-from backend.src.utils.exceptions import DatabaseError
+from src.utils.exceptions import DatabaseError
 
 
 class TestStorageServiceConversation:
@@ -18,12 +18,12 @@ class TestStorageServiceConversation:
     @pytest.fixture
     def mock_db(self):
         """模擬資料庫連線"""
-        with patch("backend.src.storage.database.DatabaseManager") as mock:
+        with patch("src.storage.database.DatabaseManager") as mock:
             yield mock
 
     def test_create_conversation_success(self, mock_db):
         """測試成功建立對話"""
-        from backend.src.storage.database import DatabaseManager
+        from src.storage.database import DatabaseManager
 
         # 安排
         mock_conn = MagicMock()
@@ -135,7 +135,7 @@ class TestStorageServiceMessage:
     @pytest.fixture
     def mock_db(self):
         """模擬資料庫連線"""
-        with patch("backend.src.storage.database.DatabaseManager") as mock:
+        with patch("src.storage.database.DatabaseManager") as mock:
             yield mock
 
     def test_save_message_success(self, mock_db):
@@ -261,7 +261,7 @@ class TestStorageServiceQueryPerformance:
     @pytest.fixture
     def mock_db(self):
         """模擬資料庫連線"""
-        with patch("backend.src.storage.database.DatabaseManager") as mock:
+        with patch("src.storage.database.DatabaseManager") as mock:
             yield mock
 
     def test_query_by_user_id_uses_index(self, mock_db):
@@ -319,7 +319,7 @@ class TestStorageServiceTransactions:
     @pytest.fixture
     def mock_db(self):
         """模擬資料庫連線"""
-        with patch("backend.src.storage.database.DatabaseManager") as mock:
+        with patch("src.storage.database.DatabaseManager") as mock:
             yield mock
 
     def test_save_conversation_and_message_transaction(self, mock_db):

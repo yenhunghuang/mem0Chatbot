@@ -274,8 +274,10 @@ async def health_check():
 
 # 註冊路由
 from .api.routes import chat as chat_routes
+from .api.routes import health as health_routes
 
 app.include_router(chat_routes.router)
+app.include_router(health_routes.router)  # T066: 註冊健康檢查路由
 
 
 # 根路由
