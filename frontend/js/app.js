@@ -450,11 +450,26 @@ function displayMemories(memories) {
     return;
   }
   
-  memoriesListDiv.innerHTML = memories.map(memory => `
+  memoriesListDiv.innerHTML = memories.map(memory => {
+    // 計算相關度等級和顏色
+    let relevanceBadge = '';
+    if (memory.relevance_score !== undefined && memory.relevance_score !== null) {
+      const percent = Math.round(memory.relevance_score * 100);
+      let badgeClass = 'low';
+      if (percent >= 80) {
+        badgeClass = 'high';
+      } else if (percent >= 50) {
+        badgeClass = 'medium';
+      }
+      relevanceBadge = `<span class="relevance-badge ${badgeClass}">${percent}%</span>`;
+    }
+    
+    return `
     <div class="memory-card" data-memory-id="${escapeHtml(memory.id)}">
       <div class="memory-card-header">
-        <div>
+        <div class="memory-header-left">
           ${memory.category ? `<span class="memory-badge">${escapeHtml(memory.category)}</span>` : ''}
+          ${relevanceBadge}
         </div>
         <div class="memory-actions">
           <button class="btn-memory btn-edit" onclick="editMemory('${escapeHtml(memory.id)}', '${escapeHtml(memory.content)}')">
@@ -471,10 +486,10 @@ function displayMemories(memories) {
       <div class="memory-meta">
         <span>ID: ${escapeHtml(memory.id.substring(0, 8))}...</span>
         ${memory.timestamp ? `<span>時間: ${escapeHtml(memory.timestamp.substring(0, 10))}</span>` : ''}
-        ${memory.relevance_score ? `<span>相關度: ${(memory.relevance_score * 100).toFixed(0)}%</span>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   
   console.log(`[Memory] 已顯示 ${memories.length} 個記憶`);
 }
