@@ -577,29 +577,34 @@ class MemoryService:
             if cls._mem0_client is None:
                 cls.initialize()
 
-            # Mem0 的更新操作
-            # 先刪除舊記憶，再新增新記憶
+            # Mem0 不支持直接 update，採用刪除舊記憶再新增的方式
+            logger.info(f"[開始更新記憶] memory_id={memory_id}, content={content[:50]}...")
+            
+            # 1. 先刪除舊記憶
+            try:
+                cls._mem0_client.delete(memory_id=memory_id)
+                logger.info(f"[刪除舊記憶成功] memory_id={memory_id}")
+            except Exception as e:
+                logger.warning(f"[刪除舊記憶失敗] memory_id={memory_id}, error={str(e)}")
+            
+            # 2. 新增新記憶
             meta = {}
             if category:
                 meta["category"] = category
-            meta["updated"] = True
-
-            # 使用 Mem0 的更新方法
-            result = cls._mem0_client.update(
-                memory_id=memory_id,
-                data=content,
-                metadata=meta,
-            )
-
-            logger.info(f"記憶已更新: memory_id={memory_id}")
-            return result if isinstance(result, dict) else {
-                "id": memory_id,
+            
+            new_memory_id = cls._mem0_client.add(content, metadata=meta)
+            logger.info(f"[新增記憶成功] old_id={memory_id}, new_id={new_memory_id}")
+            
+            return {
+                "id": new_memory_id,
                 "content": content,
                 "category": category,
             }
 
         except Exception as e:
-            logger.error(f"更新記憶失敗: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"更新記憶失敗: {type(e).__name__}: {str(e)}\n{error_trace}")
             raise MemoryError(f"無法更新記憶: {str(e)}")
 
     @classmethod
