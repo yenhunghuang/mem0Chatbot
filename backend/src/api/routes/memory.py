@@ -63,17 +63,17 @@ async def create_memory(
             metadata=request.metadata,
         )
         
-        # 取回新增的記憶
-        memory = MemoryService.get_memory_by_id(memory_id)
+        logger.info(f"記憶已新增: memory_id={memory_id}")
         
+        # 簡化回應：直接返回新增的記憶資訊
         return MemorySingleResponse(
             data=MemoryResponse(
-                id=memory.get("id", memory_id),
-                content=memory.get("content", request.content),
-                category=memory.get("metadata", {}).get("category"),
-                timestamp=memory.get("created_at"),
+                id=memory_id,
+                content=request.content,
+                category=request.metadata.get("category") if request.metadata else None,
+                timestamp=datetime.utcnow().isoformat() + "Z",
                 relevance_score=1.0,  # 新增的記憶相關度為 1.0
-                metadata=memory.get("metadata"),
+                metadata=request.metadata,
             ),
             timestamp=datetime.utcnow().isoformat() + "Z",
         )
