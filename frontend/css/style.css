@@ -413,7 +413,10 @@ body {
 }
 
 .tab-content.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
   animation: fadeIn 0.3s ease-in;
 }
 
