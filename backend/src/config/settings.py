@@ -5,6 +5,7 @@
 以及各種應用程式行為參數。
 """
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     # CORS Configuration
     cors_origins: List[str] = [
         "http://localhost:8000",
-        "http://127.0.0.1:8000",
+        "http://12-7.0.0.1:8000",
         "http://localhost:3000",
     ]
 
@@ -47,11 +48,7 @@ class Settings(BaseSettings):
     memory_ttl_days: int = 30
     memory_max_per_user: int = 1000
 
-    class Config:
-        """Pydantic 設定"""
-
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(env_file=".env", case_sensitive=False)
 
 
 # 全域設定實例
