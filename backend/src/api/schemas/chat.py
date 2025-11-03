@@ -14,6 +14,7 @@ class MemoryUsedResponse(BaseModel):
 
     id: str = Field(..., description="記憶 ID")
     content: str = Field(..., description="記憶內容")
+    relevance_score: Optional[float] = Field(None, description="相關度分數 (0-1)")
     metadata: Optional[Dict[str, Any]] = Field(None, description="記憶元資料")
 
     model_config = ConfigDict(
@@ -21,9 +22,10 @@ class MemoryUsedResponse(BaseModel):
             "example": {
                 "id": "mem_001",
                 "content": "使用者偏好投資科技股",
+                "relevance_score": 0.85,
                 "metadata": {
-                    "relevance": 0.95,
                     "category": "preference",
+                    "created_at": "2025-11-03T12:00:00Z",
                 },
             }
         }

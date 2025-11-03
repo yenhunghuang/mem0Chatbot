@@ -199,15 +199,17 @@ async def delete_memory(
     try:
         logger.info(f"刪除記憶: memory_id={memory_id}")
         
-        # 注意：delete_memory 需要 user_id 和 memory_id
-        # 這是一個簡化版本，實際實作可能需要調整
-        success = MemoryService.delete_memory("", memory_id)
+        # 呼叫 MemoryService.delete_memory() - 只需要 memory_id
+        success = MemoryService.delete_memory(memory_id)
         
         if not success:
             raise HTTPException(status_code=404, detail=f"無法刪除記憶")
 
     except HTTPException:
         raise
+    except MemoryError as e:
+        logger.error(f"記憶服務錯誤: {str(e)}")
+        raise HTTPException(status_code=404, detail=f"記憶不存在或無法刪除")
     except Exception as e:
         logger.error(f"刪除記憶失敗: {str(e)}")
         raise HTTPException(status_code=500, detail=f"無法刪除記憶: {str(e)}")

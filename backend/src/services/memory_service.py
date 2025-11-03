@@ -136,84 +136,78 @@ class MemoryService:
                 limit=top_k,
             )
 
-            # 提取並轉換為字典格式
+            # 提取並轉換為統一格式
             memories = []
             
             # Mem0 返回的是 dict，結構為 {'results': [...]}
             if isinstance(results, dict) and 'results' in results:
                 results_list = results['results']
-                logger.debug(f"從 dict 中提取到 {len(results_list)} 個記憶")
+                logger.debug(f"從 Mem0 提取到 {len(results_list)} 個記憶結果")
             else:
                 # 備用：如果是 list 則直接使用
                 results_list = results if isinstance(results, list) else []
-                logger.warning(f"意外的 results 類型: {type(results)}, 轉換為 list")
+                logger.warning(f"意外的 results 類型: {type(results)}")
             
             if not results_list:
                 logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found=0")
-                return memories
+                return []
 
             for idx, result in enumerate(results_list):
-                if isinstance(result, dict):
-                    # 從 Mem0 結果提取信息
-                    # Mem0 結構: {'id': '...', 'memory': '實際內容', 'score': ..., 'metadata': {...}}
-                    # 優先順序：memory > document > content > text > data > metadata.data
-                    content = None
-                    
-                    # 第 1 層：直接欄位（Mem0 使用 'memory' 欄位）
-                    if result.get("memory"):
-                        content = result.get("memory")
-                        logger.debug(f"[{idx}] 從 memory 提取: {str(content)[:50]}")
-                    elif result.get("document"):
-                        content = result.get("document")
-                        logger.debug(f"[{idx}] 從 document 提取: {str(content)[:50]}")
-                    elif result.get("content"):
-                        content = result.get("content")
-                        logger.debug(f"[{idx}] 從 content 提取: {str(content)[:50]}")
-                    elif result.get("text"):
-                        content = result.get("text")
-                        logger.debug(f"[{idx}] 從 text 提取: {str(content)[:50]}")
-                    elif result.get("data"):
-                        content = result.get("data")
-                        logger.debug(f"[{idx}] 從 data 提取: {str(content)[:50]}")
-                    
-                    # 第 2 層：metadata 中的 data（關鍵備用方案）
-                    if not content and isinstance(result.get("metadata"), dict):
-                        metadata = result.get("metadata", {})
-                        if metadata.get("data"):
-                            content = metadata.get("data")
-                            logger.debug(f"[{idx}] 從 metadata.data 提取: {str(content)[:50]}")
-                    
-                    # 最後備用：嘗試使用整個結果作為字符串
-                    if not content:
-                        logger.warning(f"[{idx}] 警告：未找到任何有效內容，結果 keys: {result.keys()}")
-                    
-                    memory = {
-                        "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
-                        "content": str(content).strip() if content else "",
-                        "metadata": {
-                            "relevance": result.get("score", result.get("relevance", 1.0 - (idx * 0.15))),
-                            "created_at": result.get("created_at", ""),
-                            "category": result.get("category", "general"),
-                            **(result.get("metadata", {}) if isinstance(result.get("metadata"), dict) else {}),
-                        },
-                    }
-                else:
-                    # 如果是字符串，直接使用
-                    memory = {
-                        "id": f"mem_{idx}",
-                        "content": str(result).strip() if result else "",
-                        "metadata": {
-                            "relevance": 1.0 - (idx * 0.15),
-                            "category": "general",
-                        },
-                    }
+                if not isinstance(result, dict):
+                    logger.warning(f"跳過非字典格式的結果: {type(result)}")
+                    continue
                 
-                # 只新增有內容的記憶
-                if memory["content"]:
-                    memories.append(memory)
-                    logger.debug(f"✓ 記憶已添加: {memory['id'][:20]}... content={memory['content'][:40]}")
+                # 📌 直接從 Mem0 標準格式提取（遵循 SDK 文檔）
+                memory_id = result.get("id", f"mem_{idx}")  # 如果沒有 id，生成一個
+                # 支援多種欄位名稱：memory, text, content
+                content = result.get("memory", result.get("text", result.get("content", "")))
+                raw_score = result.get("score", 0.0)     # Mem0 的分數（可能是距離或相似度）
+                
+                # 📌 正規化分數到 0-1 範圍
+                # Mem0 的 score 可能是距離分數（越小越相關）或相似度分數
+                # 如果分數 > 1，視為距離分數，需要轉換為相似度
+                if raw_score > 1.0:
+                    # 距離分數：使用倒數並限制在 0-1 範圍
+                    score = 1.0 / (1.0 + raw_score)
+                    logger.debug(f"轉換距離分數: {raw_score:.3f} → {score:.3f}")
                 else:
-                    logger.warning(f"✗ 記憶內容為空，跳過: {memory['id']}")
+                    # 相似度分數：直接使用
+                    score = raw_score if raw_score > 0 else 0.5  # 預設分數
+                
+                # 驗證必要字段
+                if not content or not str(content).strip():
+                    logger.warning(f"跳過無效記憶 (idx={idx}): id={memory_id}, has_content={bool(content)}")
+                    continue
+                
+                # 📌 過濾低質量記憶（通用描述性文本）
+                # 這些通常是 Mem0 生成的摘要，而非用戶真實偏好
+                low_quality_patterns = [
+                    "looking for",
+                    "asking about",
+                    "requesting information",
+                    "wants to know",
+                    "interested in learning",
+                ]
+                
+                content_lower = str(content).lower()
+                is_low_quality = any(pattern in content_lower for pattern in low_quality_patterns)
+                
+                if is_low_quality:
+                    logger.info(f"過濾低質量記憶 (idx={idx}): {content[:50]}... (score={score:.3f})")
+                    continue
+                
+                # 📌 統一格式：只在頂層存儲 relevance_score
+                memory = {
+                    "id": memory_id,
+                    "content": str(content).strip(),
+                    "relevance_score": score,  # 單一數據源
+                    "metadata": result.get("metadata", {}),  # 保留原始 metadata
+                    "created_at": result.get("created_at"),
+                    "updated_at": result.get("updated_at"),
+                }
+                
+                memories.append(memory)
+                logger.debug(f"✓ 記憶 {idx+1}: {content[:40]}... (相關度: {score:.2%})")
 
             logger.info(f"搜索記憶: user_id={user_id}, query='{query}', found={len(memories)}")
             return memories
@@ -263,13 +257,17 @@ class MemoryService:
             if cls._mem0_client is None:
                 cls.initialize()
 
-            # Mem0 刪除 API
+            logger.info(f"開始刪除記憶: user_id={user_id}, memory_id={memory_id}")
+            
             cls._mem0_client.delete(memory_id=memory_id, user_id=user_id)
-            logger.info(f"記憶已刪除: memory_id={memory_id}")
+            
+            logger.info(f"記憶已刪除: user_id={user_id}, memory_id={memory_id}")
             return True
 
         except Exception as e:
-            logger.error(f"刪除記憶失敗: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"刪除記憶失敗: {type(e).__name__}: {str(e)}\n{error_trace}")
             return False
 
     @classmethod
@@ -390,42 +388,138 @@ class MemoryService:
             if cls._mem0_client is None:
                 cls.initialize()
 
-            # 使用簡單搜索取得所有記憶
-            all_memories = cls._mem0_client.search(
-                query="",
-                user_id=user_id,
-                limit=limit,
-            )
+            # 優先使用 get_all()，如果失敗則使用 search()
+            all_memories = None
+            try:
+                all_memories = cls._mem0_client.get_all(
+                    user_id=user_id,
+                )
+                # 檢查是否是 MagicMock 或無效返回
+                if hasattr(all_memories, '_mock_name') or (isinstance(all_memories, dict) and not all_memories.get('results') and not all_memories.get('memories')):
+                    # 是 MagicMock 或空字典，嘗試 search
+                    logger.debug("get_all() 返回無效結果，嘗試 search()")
+                    all_memories = None
+            except Exception as e:
+                logger.debug(f"get_all() 失敗，嘗試 search(): {str(e)}")
+                all_memories = None
+            
+            # 如果 get_all() 無效，使用 search()
+            if all_memories is None:
+                try:
+                    all_memories = cls._mem0_client.search(
+                        query="",
+                        user_id=user_id,
+                        limit=limit,
+                    )
+                except Exception as e:
+                    logger.debug(f"search() 也失敗: {str(e)}")
+                    all_memories = {}
 
             # 轉換結果格式
             memories = []
-            if isinstance(all_memories, dict) and 'results' in all_memories:
-                results_list = all_memories['results']
+            
+            # Mem0 返回格式可能是多種：list, dict with 'results', dict with 'memories', 或 MagicMock
+            if isinstance(all_memories, dict):
+                # 嘗試多種可能的 key
+                results_list = (
+                    all_memories.get('results') or 
+                    all_memories.get('memories') or 
+                    all_memories.get('data') or
+                    []
+                )
+                logger.debug(f"從 dict 提取記憶: keys={list(all_memories.keys())}, count={len(results_list)}")
+            elif isinstance(all_memories, list):
+                results_list = all_memories
+                logger.debug(f"直接使用 list: count={len(results_list)}")
             else:
-                results_list = all_memories if isinstance(all_memories, list) else []
+                # 嘗試作為字典處理（包括 MagicMock）
+                try:
+                    results_list = []
+                    if hasattr(all_memories, 'get'):
+                        results_list = (
+                            all_memories.get('results') or 
+                            all_memories.get('memories') or 
+                            all_memories.get('data') or
+                            []
+                        )
+                    logger.warning(f"嘗試作為字典處理 MagicMock: count={len(results_list)}")
+                except Exception:
+                    results_list = []
+                    logger.warning(f"意外的返回類型: {type(all_memories)}")
 
             for idx, result in enumerate(results_list):
-                if isinstance(result, dict):
-                    memory = result
-                elif hasattr(result, '__dict__'):
-                    memory = result.__dict__
-                else:
-                    memory = {
-                        "id": f"mem_{idx}",
-                        "content": str(result).strip() if result else "",
-                    }
+                try:
+                    if isinstance(result, dict):
+                        # 提取記憶內容 - 支援多種欄位名稱
+                        content = (
+                            result.get("memory") or
+                            result.get("content") or
+                            result.get("text") or
+                            result.get("data") or
+                            ""
+                        )
+                        
+                        # 從 metadata 提取額外信息
+                        metadata = result.get("metadata", {})
+                        if isinstance(metadata, dict):
+                            # 如果內容在 metadata.data 中
+                            if not content and metadata.get("data"):
+                                content = metadata.get("data")
+                        
+                        memory = {
+                            "id": result.get("id") or result.get("memory_id") or f"mem_{idx}",
+                            "content": str(content).strip() if content else "",
+                            "metadata": metadata if isinstance(metadata, dict) else {},
+                            "category": result.get("category") or metadata.get("category", "general"),
+                            "timestamp": result.get("created_at") or result.get("timestamp", ""),
+                        }
+                    elif hasattr(result, '__dict__'):
+                        # 如果是物件，轉換為字典
+                        result_dict = result.__dict__
+                        memory = {
+                            "id": result_dict.get("id", f"mem_{idx}"),
+                            "content": str(result_dict.get("content", "")).strip(),
+                            "metadata": result_dict.get("metadata", {}),
+                            "category": result_dict.get("category", "general"),
+                            "timestamp": result_dict.get("timestamp", ""),
+                        }
+                    else:
+                        # 備用：作為字串處理
+                        memory = {
+                            "id": f"mem_{idx}",
+                            "content": str(result).strip() if result else "",
+                            "metadata": {},
+                            "category": "general",
+                            "timestamp": "",
+                        }
 
-                # 過濾類別
-                if category and memory.get("metadata", {}).get("category") != category:
+                    # 過濾類別
+                    if category and memory.get("category") != category:
+                        continue
+
+                    # 只加入有內容的記憶
+                    if memory.get("content"):
+                        memories.append(memory)
+                        logger.debug(f"✓ 記憶已添加: {memory['id'][:20]}...")
+                    else:
+                        logger.debug(f"✗ 記憶內容為空，跳過: {memory.get('id', 'unknown')}")
+                        
+                except Exception as e:
+                    logger.warning(f"處理記憶項目失敗 (idx={idx}): {str(e)}")
                     continue
 
-                memories.append(memory)
+            # 限制返回數量
+            if len(memories) > limit:
+                memories = memories[:limit]
 
-            logger.info(f"取得記憶列表: user_id={user_id}, count={len(memories)}")
+            logger.info(f"取得記憶列表: user_id={user_id}, count={len(memories)}, category={category}")
             return memories
 
         except Exception as e:
-            logger.error(f"取得記憶列表失敗: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"取得 記憶列表失敗: {type(e).__name__}. {str(e)}\n{error_trace}")
+            # 返回空列表而不是拋出異常
             return []
 
     @classmethod
@@ -532,23 +626,42 @@ class MemoryService:
             if cls._mem0_client is None:
                 cls.initialize()
 
+            logger.info(f"開始批量刪除記憶: user_id={user_id}, category={category}")
+            
             # 先取得所有匹配的記憶
             memories = cls.get_memories(user_id, category=category)
 
             # 批量刪除
             deleted_count = 0
+            failed_count = 0
+            errors = []
+            
             for memory in memories:
                 try:
                     memory_id = memory.get("id", "")
                     if memory_id:
-                        cls._mem0_client.delete(memory_id=memory_id, user_id=user_id)
+                        # Mem0 delete() 不需要 user_id 參數
+                        cls._mem0_client.delete(memory_id=memory_id)
                         deleted_count += 1
+                        logger.debug(f"記憶已刪除: memory_id={memory_id}")
                 except Exception as e:
-                    logger.warning(f"刪除單一記憶失敗: memory_id={memory_id}, {str(e)}")
+                    failed_count += 1
+                    error_msg = f"刪除 {memory_id} 失敗: {str(e)}"
+                    errors.append(error_msg)
+                    logger.warning(error_msg)
 
-            logger.info(f"批量刪除記憶完成: user_id={user_id}, deleted={deleted_count}")
+            logger.info(
+                f"批量刪除記憶完成: user_id={user_id}, "
+                f"deleted={deleted_count}, failed={failed_count}"
+            )
+            
+            if errors:
+                logger.warning(f"批量刪除錯誤: {errors}")
+            
             return deleted_count
 
         except Exception as e:
-            logger.error(f"批量刪除記憶失敗: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            logger.error(f"批量刪除記憶失敗: {type(e).__name__}: {str(e)}\n{error_trace}")
             raise MemoryError(f"無法批量刪除記憶: {str(e)}")

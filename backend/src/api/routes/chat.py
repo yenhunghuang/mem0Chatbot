@@ -141,6 +141,7 @@ async def chat(
                     MemoryUsedResponse(
                         id=mem.get("id", ""),
                         content=mem.get("content", ""),
+                        relevance_score=mem.get("relevance_score"),
                         metadata=mem.get("metadata"),
                     )
                 )

@@ -141,9 +141,9 @@
 - [x] T057 [P] [US3] 在 backend/src/api/routes/memory.py 實作 POST /memories/search 端點（語義搜索）
 - [x] T058 [US3] 在 memory.py 所有端點加入錯誤處理（404 記憶不存在, 400 驗證錯誤）
 - [x] T059 [US3] 在 backend/src/main.py 註冊 memory.py 路由
-- [ ] T060 [P] [US3] 建立 frontend/js/memory.js 實作記憶管理 API 客戶端（listMemories, deleteMemory, updateMemory）
-- [ ] T061 [US3] 修改 frontend/index.html 新增「查看我的偏好」按鈕和記憶顯示區域
-- [ ] T062 [US3] 在 frontend/js/app.js 整合 memory.js，實作顯示記憶列表和刪除功能
+- [x] T060 [P] [US3] 建立 frontend/js/memory.js 實作記憶管理 API 客戶端（listMemories, deleteMemory, updateMemory）
+- [x] T061 [US3] 修改 frontend/index.html 新增「查看我的偏好」按鈕和記憶顯示區域
+- [x] T062 [US3] 在 frontend/js/app.js 整合 memory.js，實作顯示記憶列表和刪除功能
 
 **Checkpoint**: 所有使用者故事應獨立可用
 
