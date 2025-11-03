@@ -275,9 +275,11 @@ async def health_check():
 # 註冊路由
 from .api.routes import chat as chat_routes
 from .api.routes import health as health_routes
+from .api.routes import memory as memory_routes  # T059: 匯入記憶路由
 
 app.include_router(chat_routes.router)
 app.include_router(health_routes.router)  # T066: 註冊健康檢查路由
+app.include_router(memory_routes.router)  # T059: 註冊記憶管理路由
 
 
 # 根路由
