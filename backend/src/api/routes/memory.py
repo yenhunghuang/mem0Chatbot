@@ -11,6 +11,7 @@ from typing import Optional
 from ..schemas.memory import (
     MemoryResponse,
     MemoryListResponse,
+    MemoryCreateRequest,
     MemoryUpdateRequest,
     MemorySingleResponse,
     BatchDeleteRequest,
@@ -25,6 +26,63 @@ from ...utils.exceptions import MemoryError
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/memories", tags=["memories"])
+
+
+@router.post("", response_model=MemorySingleResponse)
+async def create_memory(
+    request: MemoryCreateRequest = Body(...),
+) -> MemorySingleResponse:
+    """
+    新增記憶
+
+    **功能**: 為使用者新增一條記憶，自動進行向量化並儲存
+
+    Args:
+        request: 記憶新增請求（包含 user_id, content, metadata）
+
+    Returns:
+        MemorySingleResponse: 新增的記憶詳細資訊
+
+    Raises:
+        HTTPException: 400 驗證錯誤, 500 伺服器錯誤
+    """
+    try:
+        if not request.user_id or not request.user_id.strip():
+            raise HTTPException(status_code=422, detail="使用者 ID 不能為空")
+
+        if not request.content or not request.content.strip():
+            raise HTTPException(status_code=422, detail="記憶內容不能為空")
+
+        logger.info(
+            f"新增記憶: user_id={request.user_id}, content_len={len(request.content)}"
+        )
+        
+        memory_id = MemoryService.add_memory(
+            user_id=request.user_id,
+            content=request.content,
+            metadata=request.metadata,
+        )
+        
+        # 取回新增的記憶
+        memory = MemoryService.get_memory_by_id(memory_id)
+        
+        return MemorySingleResponse(
+            data=MemoryResponse(
+                id=memory.get("id", memory_id),
+                content=memory.get("content", request.content),
+                category=memory.get("metadata", {}).get("category"),
+                timestamp=memory.get("created_at"),
+                relevance_score=1.0,  # 新增的記憶相關度為 1.0
+                metadata=memory.get("metadata"),
+            ),
+            timestamp=datetime.utcnow().isoformat() + "Z",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"新增記憶失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"無法新增記憶: {str(e)}")
 
 
 @router.get("", response_model=MemoryListResponse)

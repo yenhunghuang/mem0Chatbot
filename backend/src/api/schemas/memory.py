@@ -59,6 +59,25 @@ class MemoryListResponse(BaseModel):
     count: int = Field(..., description="本次返回的記憶數量")
 
 
+class MemoryCreateRequest(BaseModel):
+    """記憶新增請求"""
+
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "user_id": "user-123",
+            "content": "我偏好科技股投資",
+            "metadata": {
+                "category": "preference",
+                "source": "seed"
+            }
+        }
+    })
+
+    user_id: str = Field(..., description="使用者 ID")
+    content: str = Field(..., description="記憶內容", min_length=1, max_length=10000)
+    metadata: Optional[dict] = Field(None, description="記憶中繼資料（可包含 category）")
+
+
 class MemoryUpdateRequest(BaseModel):
     """記憶更新請求"""
 
